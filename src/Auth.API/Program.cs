@@ -23,6 +23,15 @@ app.UseHttpsRedirection();
 
 app.MapCustomEnpoints();
 
+app.UseCors(x =>
+{
+    x.WithOrigins("http://localhost:4200")
+    //x.AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+    //.AllowCredentials();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 
