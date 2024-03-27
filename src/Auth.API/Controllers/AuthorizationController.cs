@@ -28,9 +28,9 @@ namespace Auth.API.Controllers
             IHttpContextAccessor httpContext)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _signInManager = signInManager;
             _applicationManager = applicationManager;
-            _roleManager = roleManager;
         }
 
         [HttpPost("~/connect/token"), Produces("application/json")]
@@ -149,6 +149,19 @@ namespace Auth.API.Controllers
                 foreach (var userRole in await _userManager.GetRolesAsync(user))
                 {
                     identity.AddClaim(OpenIddictConstants.Claims.Role, userRole, OpenIddictConstants.Destinations.AccessToken);
+
+                    //Add Permissions for Role
+                    //Improve this by reducing calls to the DB
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    if (role == null)
+                        continue;
+                    var roleClaims = (await _roleManager.GetClaimsAsync(role));
+                    foreach (var claim in roleClaims)
+                    {
+                        if (claim == null)
+                            continue;
+                        identity.AddClaim("Permission", claim.Value, OpenIddictConstants.Destinations.AccessToken);
+                    }
                 }
 
                 var claimsPrincipal = new ClaimsPrincipal(identity);
@@ -161,6 +174,28 @@ namespace Auth.API.Controllers
                     "api"
                 });
 
+                claimsPrincipal.SetDestinations(static claim => claim.Type switch
+                {
+                    // If the "profile" scope was granted, allow the "name" claim to be
+                    // added to the access and identity tokens derived from the principal.
+                    Claims.Name when claim.Subject.HasScope(Scopes.Profile) => new[]
+                    {
+                        OpenIddictConstants.Destinations.AccessToken,
+                        OpenIddictConstants.Destinations.IdentityToken
+                    },
+
+                    // Never add the "secret_value" claim to access or identity tokens.
+                    // In this case, it will only be added to authorization codes,
+                    // refresh tokens and user/device codes, that are always encrypted.
+                    "secret_value" => Array.Empty<string>(),
+
+                    // Otherwise, add the claim to the access tokens only.
+                    _ => new[]
+                    {
+                        OpenIddictConstants.Destinations.AccessToken
+                    }
+                });
+
                 return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             }
             else
@@ -169,12 +204,11 @@ namespace Auth.API.Controllers
 
         private static void AddUserClaims(User user, ClaimsIdentity identity)
         {
-            identity.AddClaim(OpenIddictConstants.Claims.Subject, user.Id.ToString(), OpenIddictConstants.Destinations.AccessToken);
-            identity.AddClaim(OpenIddictConstants.Claims.Username, user.UserName, OpenIddictConstants.Destinations.AccessToken);
-            identity.AddClaim(OpenIddictConstants.Claims.Name, user.FullName, OpenIddictConstants.Destinations.AccessToken);
-            identity.AddClaim(OpenIddictConstants.Claims.Email, user.Email, OpenIddictConstants.Destinations.AccessToken);
-            identity.AddClaim("avatar", user.Avatar ?? "", OpenIddictConstants.Destinations.AccessToken);
+            identity.SetClaim(OpenIddictConstants.Claims.Subject, user.Id.ToString(), OpenIddictConstants.Destinations.AccessToken);
+            identity.SetClaim(OpenIddictConstants.Claims.Username, user.UserName, OpenIddictConstants.Destinations.AccessToken);
+            identity.SetClaim(OpenIddictConstants.Claims.Name, user.FullName, OpenIddictConstants.Destinations.AccessToken);
+            identity.SetClaim(OpenIddictConstants.Claims.Email, user.Email, OpenIddictConstants.Destinations.AccessToken);
+            identity.SetClaim("avatar", user.Avatar ?? "", OpenIddictConstants.Destinations.AccessToken);
         }
-
     }
 }

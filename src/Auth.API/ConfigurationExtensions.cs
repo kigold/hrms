@@ -1,6 +1,7 @@
 ﻿using Auth.API.Apis;
 using Auth.API.Data.Context;
 using Auth.API.Data.Models;
+using Auth.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +9,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Validation.AspNetCore;
+using Shared.Permissions;
+using Shared.Repositories;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Auth.API
@@ -16,12 +19,31 @@ namespace Auth.API
     {
         private static bool IsDevelopment() => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
+        public static IServiceCollection AddApplicationDependencies(this IServiceCollection services)
+        {
+            services.AddTransient<DbContext, AppDbContext>();
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+            //services.AddScoped(typeof(IDbContextProvider<>), typeof(UnitOfWorkDbContextProvider<>));
+            services.AddTransient<IRepository<User>, Repository<User, AppDbContext>>();
+            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+            return services;
+        }
+
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        {
+            services.AddScoped<IRoleService, RoleService>();
+
+            return services;
+        }
+
         public static WebApplication MapCustomEnpoints(this WebApplication app)
         {
             app.MapControllers().RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme });
             app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
             app.MapDefaultControllerRoute();
             app.MapWeatherRequestEndpoints();
+            app.MapRoleEndpoints();
             return app;
         }
 
@@ -32,6 +54,7 @@ namespace Auth.API
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
                 options.Authority = options.Authority = identityUrl;
@@ -54,6 +77,12 @@ namespace Auth.API
                         return Task.CompletedTask;
                     }
                 };
+            });
+
+            //Authorization
+            services.AddAuthorization(x => {
+                x.AddPolicy("Role", p => p.RequireClaim("Role"));
+                x.AddPermissionAuthorizationPolicy();
             });
 
             services.AddIdentity<User, Role>(options =>

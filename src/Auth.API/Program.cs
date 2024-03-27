@@ -6,9 +6,12 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.ConfigureAuthentication(builder.Configuration);
+builder.Services.AddApplicationDependencies();
+builder.Services.AddApplicationServices();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddProblemDetails();
 
 
 
@@ -34,11 +37,15 @@ app.UseCors(x =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseExceptionHandler();
+
+
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 app.Run();
