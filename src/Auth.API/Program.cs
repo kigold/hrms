@@ -39,8 +39,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseExceptionHandler();
 
-
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

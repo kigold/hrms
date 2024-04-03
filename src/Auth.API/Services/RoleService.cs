@@ -8,7 +8,6 @@ using Shared.Permissions;
 using Shared.Repositories;
 using Shared.ViewModels;
 using System.Data;
-using System.Linq;
 using System.Security.Claims;
 
 namespace Auth.API.Services
@@ -166,12 +165,14 @@ namespace Auth.API.Services
             if (role == null)
                 return new ResultModel<bool>("Role does not exists");
 
+            var roleUsers = await _userManager.GetUsersInRoleAsync(roleName);
+            if (roleUsers.Any())
+                return new ResultModel<bool>("Users are in role");
+
             var deleteResult = await _roleManager.DeleteAsync(role);
 
             if (!deleteResult.Succeeded)
-            {
                 return new ResultModel<bool>(deleteResult.Errors.Select(x => x.Description).ToList());
-            }
 
             return new ResultModel<bool>(true, "Deleted role successfully");
         }
@@ -255,10 +256,3 @@ namespace Auth.API.Services
         }
     }
 }
-
-//Create Role
-//Assign Permission to Role
-//Remove Permission from Role
-//Add User to Role
-//Remove User From Role
-//Add Permission to User
