@@ -8,4 +8,8 @@ builder.AddNpmApp("angular", "../HRMS.Angular")
     .WithEndpoint(containerPort: 3000, scheme: "http", env: "PORT");
     //AsDockerfileInManifest();
 
+builder.AddProject<Projects.Employees_API>("employees.api")
+    .WithReference(authAPI);
+    //AsDockerfileInManifest();
+
 builder.Build().Run();

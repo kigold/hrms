@@ -10,8 +10,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Validation.AspNetCore;
 using Shared.Permissions;
+using AuthorizationOptions = Shared.Auth.AuthorizationOptions;
 using Shared.Repositories;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using static OpenIddict.Server.OpenIddictServerEvents;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
 
 namespace Auth.API
 {
@@ -21,10 +26,10 @@ namespace Auth.API
 
         public static IServiceCollection AddApplicationDependencies(this IServiceCollection services)
         {
-            services.AddTransient<DbContext, AppDbContext>();
+            services.AddTransient<DbContext, AuthDbContext>();
             services.AddTransient<IUnitOfWork, UnitOfWork>();
-            //services.AddScoped(typeof(IDbContextProvider<>), typeof(UnitOfWorkDbContextProvider<>));
-            services.AddTransient<IRepository<User>, Repository<User, AppDbContext>>();
+            services.AddScoped(typeof(IDbContextProvider<>), typeof(UnitOfWorkDbContextProvider<>));
+            services.AddTransient<IRepository<User, long>, Repository<User, long, AuthDbContext>>();
             services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
             return services;
@@ -39,7 +44,8 @@ namespace Auth.API
 
         public static WebApplication MapCustomEnpoints(this WebApplication app)
         {
-            app.MapControllers().RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme });
+            app.MapControllers().RequireAuthorization();
+                //.RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme });
             app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
             app.MapDefaultControllerRoute();
             app.MapWeatherRequestEndpoints();
@@ -49,6 +55,8 @@ namespace Auth.API
 
         public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+            JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
             var identityUrl = configuration["Authentication:IdentityUrl"];
             services.AddAuthentication(x =>
             {
@@ -57,19 +65,39 @@ namespace Auth.API
                 x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
-                options.Authority = options.Authority = identityUrl;
+                var audience = "auth";
+                options.Authority = identityUrl;
                 options.RequireHttpsMetadata = false;
+                options.Audience = audience;
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     NameClaimType = Claims.Name,
                     RoleClaimType = Claims.Role,
+                    ValidateAudience = true,
                 };
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = context =>
+                    {
+                        Console.WriteLine($">>>>>>>>>>>>MessageReceived, {context.Token} {context.Principal} {context.Response}");
+                        return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        Console.WriteLine($">>>>>>>>>>>>Challenge, {context}");
+                        return Task.CompletedTask;
+                    },
+                    OnForbidden = context =>
+                    {
+                        var data = JsonSerializer.Serialize(context.HttpContext.User.Identity);
+                        Console.WriteLine($">>>>>>>>>>>>Forbidden, {context}, {data}");
+                        return Task.CompletedTask;
+                    },
                     OnAuthenticationFailed = context =>
                     {
+                        Console.WriteLine($">>>>>>>>>>>>Failed, {context}");
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                         {
                             context.Response.Headers.Append("Token-Expired", "true");
@@ -98,10 +126,10 @@ namespace Auth.API
                 options.Lockout.MaxFailedAccessAttempts = 3;
                 options.User.RequireUniqueEmail = false;
             })
-            .AddUserStore<UserStore<User, Role, AppDbContext, long, IdentityUserClaim<long>, UserRole, IdentityUserLogin<long>, IdentityUserToken<long>, RoleClaim>>()
+            .AddUserStore<UserStore<User, Role, AuthDbContext, long, IdentityUserClaim<long>, UserRole, IdentityUserLogin<long>, IdentityUserToken<long>, RoleClaim>>()
             .AddSignInManager()
             .AddUserManager<UserManager<User>>()
-            .AddEntityFrameworkStores<AppDbContext>()
+            .AddEntityFrameworkStores<AuthDbContext>()
             .AddDefaultTokenProviders();
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
@@ -120,7 +148,7 @@ namespace Auth.API
 
             services.AddControllersWithViews();
 
-            services.AddDbContext<AppDbContext>(options =>
+            services.AddDbContext<AuthDbContext>(options =>
             {
                 // Configure Entity Framework Core to use Microsoft SQL Server.
                 options.UseSqlServer(configuration.GetConnectionString("Default"));
@@ -137,7 +165,7 @@ namespace Auth.API
                     // Configure OpenIddict to use the Entity Framework Core stores and models.
                     // Note: call ReplaceDefaultEntities() to replace the default entities.
                     options.UseEntityFrameworkCore()
-                           .UseDbContext<AppDbContext>()
+                           .UseDbContext<AuthDbContext>()
                            .ReplaceDefaultEntities<long>();
                 })
 
@@ -149,7 +177,10 @@ namespace Auth.API
                         Scopes.Address,
                         Scopes.Phone,
                         Scopes.OfflineAccess,
-                        Scopes.OpenId
+                        Scopes.OpenId,
+                        Scopes.Roles,
+                        "Permission",
+                        "api"
                     );
 
                     // Enable the token endpoint.
@@ -170,7 +201,7 @@ namespace Auth.API
                     }
                     else
                     {
-                        //TODO Add Encrption
+                        //TODO Add Encryption
                     }
 
 
@@ -182,6 +213,15 @@ namespace Auth.API
                            .EnableTokenEndpointPassthrough()
                            .EnableAuthorizationEndpointPassthrough()
                            .DisableTransportSecurityRequirement();
+
+                    // Register an event handler responsible for handling token requests.
+                    //options.AddEventHandler<ProcessAuthenticationContext>(builder =>
+                    //    builder.UseInlineHandler(context =>
+                    //    {
+                    //        Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Inline Event Handler");
+
+                    //        return default;
+                    //    }));
                 })
 
                 // Register the OpenIddict validation components.
@@ -197,11 +237,4 @@ namespace Auth.API
             services.AddHostedService<SeedingWorker>(); //Seed Users
         }
     }
-}
-
-public class AuthorizationOptions : IAuthorizeData
-{
-    public string? Policy { get; set; }
-    public string? Roles { get; set; }
-    public string? AuthenticationSchemes { get; set; }
 }

@@ -3,15 +3,15 @@ using System.Linq.Expressions;
 
 namespace Shared.Repositories
 {
-    public class Repository<TEntity, TContext> : IRepository<TEntity> where TEntity : class where TContext : DbContext
+    public class Repository<TEntity, TId, TContext> : IRepository<TEntity, TId> where TEntity: class where TContext : DbContext
     {
         internal DbSet<TEntity> _dbSet;
         private DbContext _context;
 
-        public Repository(TContext context)
+        public Repository(IDbContextProvider<TContext> dbContextProvider)
         {
-            _context = context;
-            _dbSet = context.Set<TEntity>();
+            _context = dbContextProvider.GetDbContext();
+            _dbSet = _context.Set<TEntity>();
         }
 
         public virtual IQueryable<TEntity> Get(
@@ -42,7 +42,7 @@ namespace Shared.Repositories
             }
         }
 
-        public virtual TEntity GetByID(object id)
+        public virtual TEntity GetByID(TId id)
         {
             return _dbSet.Find(id);
         }
@@ -52,13 +52,13 @@ namespace Shared.Repositories
             _dbSet.Add(entity);
         }
 
-        public virtual void Delete(object id)
+        public virtual void Delete(TId id)
         {
             TEntity entityToDelete = _dbSet.Find(id);
             Delete(entityToDelete);
         }
 
-        public virtual void Delete(params object[] id)
+        public virtual void Delete(params TId[] id)
         {
             TEntity entityToDelete = _dbSet.Find(id);
             Delete(entityToDelete);

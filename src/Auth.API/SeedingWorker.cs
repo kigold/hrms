@@ -1,6 +1,8 @@
 ﻿using Auth.API.Data.Context;
 using Auth.API.Data.Models;
 using Microsoft.AspNetCore.Identity;
+using OpenIddict.Abstractions;
+using OpenIddict.Core;
 
 namespace Auth.API
 {
@@ -15,7 +17,7 @@ namespace Auth.API
         {
             using var scope = _serviceProvider.CreateScope();
 
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var context = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
             await context.Database.EnsureCreatedAsync();
 
             await SeedUsers();
@@ -45,6 +47,12 @@ namespace Auth.API
                     userManager.CreateAsync(user).GetAwaiter().GetResult();
                 }
             }
+        }
+
+        public async Task SeedApplications()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
         }
     }
 }

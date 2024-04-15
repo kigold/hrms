@@ -1,9 +1,12 @@
 ﻿using Auth.API.Models.Request;
 using Auth.API.Models.Response;
 using Auth.API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Validation.AspNetCore;
+using Shared.Auth;
 using Shared.Pagination;
 using Shared.Permissions;
 
@@ -16,7 +19,9 @@ namespace Auth.API.Apis
 
         public static WebApplication MapRoleEndpoints(this WebApplication app)
         {
-            var rolePermissionGroup = app.MapGroup(PATH_BASE).WithTags(TAGS).RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme }); ;
+            var rolePermissionGroup = app.MapGroup(PATH_BASE).WithTags(TAGS)
+                .RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme });
+                //.RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme });
             rolePermissionGroup.MapGet("/", GetRoles).RequireAuthorization(Permission.ROLE_READ.ToString());
             rolePermissionGroup.MapGet("/GetAllPermissions", GetAllPermissions).RequireAuthorization(Permission.ROLE_READ.ToString());
             rolePermissionGroup.MapGet($"/GetUserRoles/{{userId}}", GetUserRoles).RequireAuthorization(Permission.ROLE_READ.ToString()); ;

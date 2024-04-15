@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Auth.API.Data.Context
 {
-    public class AppDbContext : DbContext
+    public class AuthDbContext : DbContext
     {
-        public AppDbContext()
+        public AuthDbContext()
         {
         }
 
-        public AppDbContext(DbContextOptions<AppDbContext> options)
+        public AuthDbContext(DbContextOptions<AuthDbContext> options)
             : base(options)
         {
         }
@@ -23,7 +23,7 @@ namespace Auth.API.Data.Context
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+            builder.ApplyConfigurationsFromAssembly(typeof(AuthDbContext).Assembly);
 
 
             builder.UseOpenIddict<long>();

@@ -32,12 +32,12 @@ namespace Auth.API.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
-        private readonly IRepository<User> _userRepo;
+        private readonly IRepository<User, long> _userRepo;
         private readonly IUnitOfWork _unitOfWork;
 
         public RoleService(UserManager<User> userManager,
             RoleManager<Role> roleManager,
-            IRepository<User> userRepo,
+            IRepository<User, long> userRepo,
             IUnitOfWork unitOfWork)
         {
             _userManager = userManager;

@@ -6,6 +6,7 @@
         public int TotalPages { get; private set; }
         public int PageSize { get; private set; }
         public int TotalCount { get; private set; }
+        public string Test { get; set; } = "Test Value";
 
 
         public PagedList(IEnumerable<T> items, int totalCount, int pageNumber, int pageSize)
@@ -25,5 +26,13 @@
 
             return new PagedList<T>(items, count, pageNumber, pageSize);
         }
+    }
+
+    public class PagedList
+    {
+        public int CurrentPage { get; private set; }
+        public int TotalPages { get; private set; }
+        public int PageSize { get; private set; }
+        public int TotalCount { get; private set; }
     }
 }

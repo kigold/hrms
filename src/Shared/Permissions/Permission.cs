@@ -31,5 +31,6 @@ namespace Shared.Permissions
         ROLE_UPDATE = 3003,
         [Description("USER DELETE")]
         ROLE_DELETE = 3004,
+        TEST = 7004,
     }
 }

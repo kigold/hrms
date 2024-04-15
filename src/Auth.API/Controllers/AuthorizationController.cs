@@ -73,52 +73,7 @@ namespace Auth.API.Controllers
             }
             else if (request.IsRefreshTokenGrantType())
             {
-                var info = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-
-                var user = await _userManager.GetUserAsync(info.Principal);
-                if (user == null)
-                {
-                    var properties = new AuthenticationProperties(new Dictionary<string, string?>
-                    {
-                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The refresh token is no longer valid."
-                    });
-
-                    return Forbid(properties, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-                }
-
-                if (!await _signInManager.CanSignInAsync(user))
-                {
-                    var properties = new AuthenticationProperties(new Dictionary<string, string?>
-                    {
-                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user is no longer allowed to sign in."
-                    });
-
-                    return Forbid(properties, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-                }
-                var identity = new ClaimsIdentity(
-                    TokenValidationParameters.DefaultAuthenticationType,
-                    OpenIddictConstants.Claims.Name,
-                    OpenIddictConstants.Claims.Role);
-
-                AddUserClaims(user, identity);
-                // Add more claims if necessary
-
-                foreach (var userRole in await _userManager.GetRolesAsync(user))
-                {
-                    identity.AddClaim(OpenIddictConstants.Claims.Role, userRole, OpenIddictConstants.Destinations.AccessToken);
-                }
-
-                claimsPrincipal = new ClaimsPrincipal(identity);
-                claimsPrincipal.SetScopes(new string[]
-                {
-                    OpenIddictConstants.Scopes.Roles,
-                    OpenIddictConstants.Scopes.OfflineAccess,
-                    OpenIddictConstants.Scopes.Email,
-                    OpenIddictConstants.Scopes.Profile,
-                    "api"
-                });
+                return await RefreshTokenGrantType();
             }
             else
             {
@@ -127,6 +82,35 @@ namespace Auth.API.Controllers
 
             //return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+
+        private async Task<IActionResult> RefreshTokenGrantType()
+        {
+            var info = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+            var user = await _userManager.GetUserAsync(info.Principal);
+            if (user == null)
+            {
+                var properties = new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The refresh token is no longer valid."
+                });
+
+                return Forbid(properties, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
+
+            if (!await _signInManager.CanSignInAsync(user))
+            {
+                var properties = new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user is no longer allowed to sign in."
+                });
+
+                return Forbid(properties, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
+            return await SignIn(user);
         }
 
         private async Task<IActionResult> TokensForPasswordGrantType(OpenIddictRequest request)
@@ -138,68 +122,77 @@ namespace Auth.API.Controllers
             var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password ?? "", false);
             if (signInResult.Succeeded)
             {
-                var identity = new ClaimsIdentity(
-                    TokenValidationParameters.DefaultAuthenticationType,
-                    OpenIddictConstants.Claims.Name,
-                    OpenIddictConstants.Claims.Role);
+                return await SignIn(user);
+            }
+            else
+                return Unauthorized();
+        }
 
-                AddUserClaims(user, identity);
-                // Add more claims if necessary
+        private async Task<IActionResult> SignIn(User? user)
+        {
+            var identity = new ClaimsIdentity(
+                TokenValidationParameters.DefaultAuthenticationType,
+                OpenIddictConstants.Claims.Name,
+                OpenIddictConstants.Claims.Role);
 
-                foreach (var userRole in await _userManager.GetRolesAsync(user))
+            AddUserClaims(user, identity);
+            // Add more claims if necessary
+
+            foreach (var userRole in await _userManager.GetRolesAsync(user))
+            {
+                identity.AddClaim(OpenIddictConstants.Claims.Role, userRole, OpenIddictConstants.Destinations.AccessToken);
+
+                //Add Permissions for Role
+                //Improve this by reducing calls to the DB
+                var role = await _roleManager.FindByNameAsync(userRole);
+                if (role == null)
+                    continue;
+                var roleClaims = (await _roleManager.GetClaimsAsync(role));
+                foreach (var claim in roleClaims)
                 {
-                    identity.AddClaim(OpenIddictConstants.Claims.Role, userRole, OpenIddictConstants.Destinations.AccessToken);
-
-                    //Add Permissions for Role
-                    //Improve this by reducing calls to the DB
-                    var role = await _roleManager.FindByNameAsync(userRole);
-                    if (role == null)
+                    if (claim == null)
                         continue;
-                    var roleClaims = (await _roleManager.GetClaimsAsync(role));
-                    foreach (var claim in roleClaims)
-                    {
-                        if (claim == null)
-                            continue;
-                        identity.AddClaim("Permission", claim.Value, OpenIddictConstants.Destinations.AccessToken);
-                    }
+                    identity.AddClaim("Permission", claim.Value, OpenIddictConstants.Destinations.AccessToken);
                 }
+            }
 
-                var claimsPrincipal = new ClaimsPrincipal(identity);
-                claimsPrincipal.SetScopes(new string[]
-                {
+            var claimsPrincipal = new ClaimsPrincipal(identity);
+            claimsPrincipal.SetScopes(new string[]
+            {
                     OpenIddictConstants.Scopes.Roles,
                     OpenIddictConstants.Scopes.OfflineAccess,
                     OpenIddictConstants.Scopes.Email,
                     OpenIddictConstants.Scopes.Profile,
+                    "Permission",
                     "api"
-                });
+            });
 
-                claimsPrincipal.SetDestinations(static claim => claim.Type switch
+            claimsPrincipal.SetDestinations(static claim => claim.Type switch
+            {
+                // If the "profile" scope was granted, allow the "name" claim to be
+                // added to the access and identity tokens derived from the principal.
+                Claims.Name when claim.Subject.HasScope(Scopes.Profile) => new[]
                 {
-                    // If the "profile" scope was granted, allow the "name" claim to be
-                    // added to the access and identity tokens derived from the principal.
-                    Claims.Name when claim.Subject.HasScope(Scopes.Profile) => new[]
-                    {
                         OpenIddictConstants.Destinations.AccessToken,
                         OpenIddictConstants.Destinations.IdentityToken
                     },
 
-                    // Never add the "secret_value" claim to access or identity tokens.
-                    // In this case, it will only be added to authorization codes,
-                    // refresh tokens and user/device codes, that are always encrypted.
-                    "secret_value" => Array.Empty<string>(),
+                // Never add the "secret_value" claim to access or identity tokens.
+                // In this case, it will only be added to authorization codes,
+                // refresh tokens and user/device codes, that are always encrypted.
+                "secret_value" => Array.Empty<string>(),
 
-                    // Otherwise, add the claim to the access tokens only.
-                    _ => new[]
-                    {
+                // Otherwise, add the claim to the access tokens only.
+                _ => new[]
+                {
                         OpenIddictConstants.Destinations.AccessToken
                     }
-                });
+            });
 
-                return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-            }
-            else
-                return Unauthorized();
+            //Set Resource
+            claimsPrincipal.SetAudiences("asset_mgt", "auth", "employee");
+
+            return SignIn(claimsPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         private static void AddUserClaims(User user, ClaimsIdentity identity)
