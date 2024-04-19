@@ -3,6 +3,8 @@ using Auth.API;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // Add services to the container.
 builder.Services.ConfigureAuthentication(builder.Configuration);

@@ -1,10 +1,13 @@
 ﻿using Employees.API.Data.Models;
 using Employees.API.Models.Requests;
 using Employees.API.Models.Responses;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Shared.Messaging;
 using Shared.Pagination;
 using Shared.Repositories;
 using Shared.ViewModels;
+using System.Text.Json;
 
 namespace Employees.API.Services
 {
@@ -12,6 +15,7 @@ namespace Employees.API.Services
     {
         public Task<ResultModel<EmployeeResponse>> CreateEmployee(CreateEmployee request);
         public Task<ResultModel> UpdateEmployee(int companyId, UpdateEmployee request);
+        public Task<ResultModel> UpdateEmployeeStaffId(EmployeeStaffIdDTO request);
         public Task<ResultModel> DeleteEmployee(int companyId, long employeeId);
         public Task<ResultModel<QualificationResponse>> AddQualification(AddEmployeeQualification request);
         public Task<ResultModel> RemoveQualification(long qualificationId);
@@ -24,15 +28,18 @@ namespace Employees.API.Services
         private readonly IRepository<Employee, long> _employeeRepo;
         private readonly IRepository<Qualification, long> _qualificationRepo;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IBus _bus;
 
         public EmployeeService(
             IRepository<Employee, long> employeeRepo,
             IRepository<Qualification, long> qualificationRepo,
-            IUnitOfWork unitOfWork) 
+            IUnitOfWork unitOfWork,
+            IBus bus) 
         {
             _employeeRepo = employeeRepo;
             _qualificationRepo = qualificationRepo;
             _unitOfWork = unitOfWork;
+            _bus = bus;
         }
 
         public async Task<ResultModel<QualificationResponse>> AddQualification(AddEmployeeQualification request)
@@ -58,6 +65,7 @@ namespace Employees.API.Services
                 QualificationType = request.QualificationType
             };
             _qualificationRepo.Insert(qualification);
+            await _unitOfWork.SaveChangesAsync();
 
             return new ResultModel<QualificationResponse>(qualification.ToQualificationResponse());
         }
@@ -83,12 +91,14 @@ namespace Employees.API.Services
                 LastName = request.LastName,
                 Country = request.Country,
                 Phone = request.Phone,
-                StaffId = string.Empty, //TODO Set
+                StaffId = string.Empty,
                 Address = request.Address
             };
 
             _employeeRepo.Insert(employee);
             await _unitOfWork.SaveChangesAsync();
+            var message = JsonSerializer.Serialize(employee.ToEmployeeMessage());
+            await _bus.Publish(new PublishMessage(message, PubMessageType.CreateUser));
 
             return new ResultModel<EmployeeResponse>(employee.ToEmployeeResponse());
         }
@@ -100,6 +110,9 @@ namespace Employees.API.Services
                 return new ResultModel<EmployeeResponse>("Employee not found");
 
             _employeeRepo.Delete(employeeId);
+            await _unitOfWork.SaveChangesAsync();
+            var message = JsonSerializer.Serialize(employee.ToEmployeeMessage());
+            await _bus.Publish(new PublishMessage(message, PubMessageType.DeleteUser));
 
             return new ResultModel();
         }
@@ -117,6 +130,8 @@ namespace Employees.API.Services
         {
             _qualificationRepo.Delete(qualificationId);
 
+            await _unitOfWork.SaveChangesAsync();
+
             return new ResultModel();
         }
 
@@ -132,11 +147,28 @@ namespace Employees.API.Services
             employee.Address = request.Address;
             employee.Country = request.Country;
 
+            await _unitOfWork.SaveChangesAsync();
+
+            return new ResultModel();
+        }
+
+        public async Task<ResultModel> UpdateEmployeeStaffId(EmployeeStaffIdDTO request)
+        {
+            var employee = await _employeeRepo.Get(x => x.Email == request.Email)
+                    .Include(x => x.Company)
+                    .FirstOrDefaultAsync();
+            if (employee == null)
+                return new ResultModel<EmployeeResponse>("Employee not found");
+
+            employee.StaffId = $"{employee.Company.Name}{request.StaffId}"; //TODO Generate Staff Id Prefix
+
+            await _unitOfWork.SaveChangesAsync();
+
             return new ResultModel();
         }
 
         #region private
-        
+
         #endregion
     }
 
@@ -163,6 +195,16 @@ namespace Employees.API.Services
                     source.Phone,
                     source.Country,
                     source.Qualifications.Select(x => x.ToQualificationResponse())
+                );
+        }
+
+        public static EmployeeDTO ToEmployeeMessage(this Employee source)
+        {
+            return new EmployeeDTO(
+                    source.Email,
+                    source.FirstName,
+                    source.LastName,
+                    source.Phone
                 );
         }
     }

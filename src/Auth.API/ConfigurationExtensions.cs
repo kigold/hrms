@@ -1,22 +1,22 @@
 ﻿using Auth.API.Apis;
 using Auth.API.Data.Context;
 using Auth.API.Data.Models;
+using Auth.API.Messaging;
 using Auth.API.Services;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using OpenIddict.Validation.AspNetCore;
+using RabbitMQ.Client;
+using Shared.Messaging;
 using Shared.Permissions;
-using AuthorizationOptions = Shared.Auth.AuthorizationOptions;
 using Shared.Repositories;
-using static OpenIddict.Abstractions.OpenIddictConstants;
-using static OpenIddict.Server.OpenIddictServerEvents;
-using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Auth.API
 {
@@ -31,6 +31,48 @@ namespace Auth.API
             services.AddScoped(typeof(IDbContextProvider<>), typeof(UnitOfWorkDbContextProvider<>));
             services.AddTransient<IRepository<User, long>, Repository<User, long, AuthDbContext>>();
             services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            services.AddMassTransit(x =>
+            {
+                x.SetKebabCaseEndpointNameFormatter();
+                x.AddConsumer<AuthMessageConsumer>().ExcludeFromConfigureEndpoints();
+
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    var configuration = context.GetRequiredService<IConfiguration>();
+                    var host = configuration.GetConnectionString("RabbitMQConnection");
+                    cfg.Host(host);
+                    cfg.ConfigureEndpoints(context);
+
+                    cfg.Publish<PublishMessage>(x =>
+                    {
+                        x.ExchangeType = ExchangeType.Direct;
+                    });
+
+                    cfg.ReceiveEndpoint("create-user", e =>
+                    {
+                        e.ConfigureConsumeTopology = false;
+                        e.ConfigureConsumer<AuthMessageConsumer>(context);
+                        e.Bind<PublishMessage>(x =>
+                        {
+                            x.ExchangeType = ExchangeType.Direct;
+                            x.RoutingKey = PubMessageType.CreateUser.ToString();
+                        });
+                    });
+
+                    cfg.ReceiveEndpoint("delete-user", e =>
+                    {
+                        e.ConfigureConsumeTopology = false;
+                        e.ConfigureConsumer<AuthMessageConsumer>(context);
+                        e.Bind<PublishMessage>(x =>
+                        {
+                            x.ExchangeType = ExchangeType.Direct;
+                            x.RoutingKey = PubMessageType.DeleteUser.ToString(); ;
+                        });
+                    });
+
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
 
             return services;
         }
@@ -79,16 +121,16 @@ namespace Auth.API
 
                 options.Events = new JwtBearerEvents
                 {
-                    OnMessageReceived = context =>
-                    {
-                        Console.WriteLine($">>>>>>>>>>>>MessageReceived, {context.Token} {context.Principal} {context.Response}");
-                        return Task.CompletedTask;
-                    },
-                    OnChallenge = context =>
-                    {
-                        Console.WriteLine($">>>>>>>>>>>>Challenge, {context}");
-                        return Task.CompletedTask;
-                    },
+                    //OnMessageReceived = context =>
+                    //{
+                    //    Console.WriteLine($">>>>>>>>>>>>MessageReceived, {context.Token} {context.Principal} {context.Response}");
+                    //    return Task.CompletedTask;
+                    //},
+                    //OnChallenge = context =>
+                    //{
+                    //    Console.WriteLine($">>>>>>>>>>>>Challenge, {context}");
+                    //    return Task.CompletedTask;
+                    //},
                     OnForbidden = context =>
                     {
                         var data = JsonSerializer.Serialize(context.HttpContext.User.Identity);
