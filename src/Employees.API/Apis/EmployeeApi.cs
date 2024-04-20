@@ -83,19 +83,7 @@ namespace Employees.API.Apis
         }
 
         //GET /Employee
-        //public static async Task<Results<Ok<PagedList<EmployeeResponse>>, ValidationProblem>> GetEmployees(IEmployeeService employeeService, [AsParameters] PagedRequest request)
-        //{
-        //    var result = await employeeService.GetEmployee(1, request);
-        //    if (result.HasError)
-        //        return result.ValidationProblem();
-
-        //    Console.WriteLine($"Total Result Count {result.Data.TotalCount}");
-
-        //    return TypedResults.Ok(result.Data);
-        //}
-
-        //GET /Employee
-        public static async Task<Results<Ok<PagedIsh<EmployeeResponse>[]>, ValidationProblem>> GetEmployees(IEmployeeService employeeService, [AsParameters] PagedRequest request)
+        public static async Task<Results<Ok<PagedList<EmployeeResponse>>, ValidationProblem>> GetEmployees(IEmployeeService employeeService, [AsParameters] PagedRequest request)
         {
             var result = await employeeService.GetEmployee(1, request);
             if (result.HasError)
@@ -103,17 +91,7 @@ namespace Employees.API.Apis
 
             Console.WriteLine($"Total Result Count {result.Data.TotalCount}");
 
-            var res = result.Data.Select(x => new PagedIsh<EmployeeResponse>(
-                result.Data.CurrentPage,
-                result.Data.TotalPages,
-                result.Data.PageSize,
-                result.Data.TotalCount,
-                x
-                )).ToArray();
-
-            return TypedResults.Ok(res);
+            return TypedResults.Ok(result.Data);
         }
     }
-
-    public record PagedIsh<T>(int CurrentPage, int TotalPages, int PageSize, int TotalCount, T Data);
 }

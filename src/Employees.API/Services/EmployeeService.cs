@@ -121,9 +121,9 @@ namespace Employees.API.Services
         {
             var employees = _employeeRepo.Get(x => x.CompanyId == companyId).Include(x => x.Qualifications);
 
-            var items = PagedList<Employee>.ToPagedList(employees, query.PageNumber, query.PageSize);
+            var result = PagedList<Employee>.ToPagedList(employees, query.PageNumber, query.PageSize);
 
-            return new ResultModel<PagedList<EmployeeResponse>>(new PagedList<EmployeeResponse>(items.Select(x => x.ToEmployeeResponse()), items.TotalCount, query.PageNumber, query.PageSize));
+            return new ResultModel<PagedList<EmployeeResponse>>(new PagedList<EmployeeResponse>(result.Items.Select(x => x.ToEmployeeResponse()), result.TotalCount, query.PageNumber, query.PageSize));
         }
 
         public async Task<ResultModel> RemoveQualification(long qualificationId)

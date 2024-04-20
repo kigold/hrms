@@ -1,12 +1,12 @@
 ﻿namespace Shared.Pagination
 {
-    public class PagedList<T> : List<T>
+    public class PagedList<T>
     {
         public int CurrentPage { get; private set; }
         public int TotalPages { get; private set; }
         public int PageSize { get; private set; }
         public int TotalCount { get; private set; }
-        public string Test { get; set; } = "Test Value";
+        public List<T> Items { get; private set; } = new List<T>();
 
 
         public PagedList(IEnumerable<T> items, int totalCount, int pageNumber, int pageSize)
@@ -16,7 +16,7 @@
             CurrentPage = pageNumber;
             TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            AddRange(items);
+            Items.AddRange(items);
         }
 
         public static PagedList<T> ToPagedList(IQueryable<T> source, int pageNumber, int pageSize)
