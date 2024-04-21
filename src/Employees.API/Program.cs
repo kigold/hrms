@@ -14,6 +14,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
+builder.Services.AddCors();
 
 var app = builder.Build();
 
@@ -24,14 +25,14 @@ app.MapDefaultEndpoints();
 app.UseHttpsRedirection();
 app.MapCustomEnpoints();
 
-//app.UseCors(x =>
-//{
-//    x.WithOrigins("http://localhost:4200")
-//    //x.AllowAnyOrigin()
-//        .AllowAnyMethod()
-//        .AllowAnyHeader();
-//    //.AllowCredentials();
-//});
+app.UseCors(x =>
+{
+    //x.WithOrigins("http://localhost:4200")
+    x.AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+    //.AllowCredentials();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -29,8 +29,8 @@ app.MapCustomEnpoints();
 
 app.UseCors(x =>
 {
-    x.WithOrigins("http://localhost:4200")
-    //x.AllowAnyOrigin()
+    //x.WithOrigins("http://localhost:4200")
+    x.AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader();
     //.AllowCredentials();

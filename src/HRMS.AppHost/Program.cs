@@ -14,15 +14,17 @@ var messaging = builder.AddRabbitMQ("RabbitMQConnection")
 var authAPI = builder.AddProject<Projects.Auth_API>("authapi")
     .WithReference(messaging);
 
-// Angular: npm run start
-//builder.AddNpmApp("angular", "../HRMS.Angular")
-//    .WithReference(authAPI)
-//    .WithEndpoint(containerPort: 3000, scheme: "http", env: "PORT");
+var employeeAPI = builder.AddProject<Projects.Employees_API>("employeesapi")
+    .WithReference(messaging);
 //AsDockerfileInManifest();
 
-builder.AddProject<Projects.Employees_API>("employeesapi")
-    .WithReference(messaging);
-    //AsDockerfileInManifest();
+// Angular: npm run start
+builder.AddNpmApp("angular", "../HRMS.Angular")
+    .WithReference(authAPI)
+    .WithReference(employeeAPI)
+    .WithHttpEndpoint(targetPort: 3000, env: "PORT")
+    //.PublishAsDockerFile()
+    ;
 
 builder.Build().Run();
 
