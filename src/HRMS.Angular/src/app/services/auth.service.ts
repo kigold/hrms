@@ -10,7 +10,7 @@ import { jwtDecode } from 'jwt-decode';
 })
 export class AuthService implements BaseService {
 
-	private SERVER_URL = "http://localhost:5073"//config.apiBaseUrl;
+	private SERVER_URL = "https://localhost:7262"//config.apiBaseUrl;
 	constructor(private httpClient: HttpClient, private helperService: HelperService) { 
     console.log("Initiating Auth Service", httpClient)
   }

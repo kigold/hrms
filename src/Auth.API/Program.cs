@@ -3,6 +3,8 @@ using Auth.API;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // Add services to the container.
 builder.Services.ConfigureAuthentication(builder.Configuration);
@@ -23,13 +25,12 @@ app.MapDefaultEndpoints();
 
 
 app.UseHttpsRedirection();
-
 app.MapCustomEnpoints();
 
 app.UseCors(x =>
 {
-    x.WithOrigins("http://localhost:4200")
-    //x.AllowAnyOrigin()
+    //x.WithOrigins("http://localhost:4200")
+    x.AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader();
     //.AllowCredentials();
@@ -47,4 +48,3 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
-

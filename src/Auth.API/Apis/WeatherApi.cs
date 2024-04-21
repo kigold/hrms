@@ -1,4 +1,5 @@
 ﻿using OpenIddict.Validation.AspNetCore;
+using Shared.Auth;
 
 namespace Auth.API.Apis
 {

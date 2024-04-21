@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,11 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting" Version="8.0.0-preview.3.24105.21" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="8.0.0-preview.5.24201.12" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="8.0.0-preview.5.24201.12" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="8.0.0-preview.5.24201.12" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Auth.API\Auth.API.csproj" />
+    <ProjectReference Include="..\Employees.API\Employees.API.csproj" />
   </ItemGroup>
 
 </Project>
