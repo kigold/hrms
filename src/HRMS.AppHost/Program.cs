@@ -18,10 +18,13 @@ var employeeAPI = builder.AddProject<Projects.Employees_API>("employeesapi")
     .WithReference(messaging);
 //AsDockerfileInManifest();
 
+var gateway = builder.AddProject<Projects.Yarp_Gateway>("yarp-gateway")
+    .WithReference(authAPI)
+    .WithReference(employeeAPI);
+
 // Angular: npm run start
 builder.AddNpmApp("angular", "../HRMS.Angular")
-    .WithReference(authAPI)
-    .WithReference(employeeAPI)
+    .WithReference(gateway)
     .WithHttpEndpoint(targetPort: 3000, env: "PORT")
     //.PublishAsDockerFile()
     ;

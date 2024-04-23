@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Auth.API\Auth.API.csproj" />
     <ProjectReference Include="..\Employees.API\Employees.API.csproj" />
+    <ProjectReference Include="..\Yarp.Gateway\Yarp.Gateway.csproj" />
   </ItemGroup>
 
 </Project>
