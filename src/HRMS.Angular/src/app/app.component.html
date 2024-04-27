@@ -1,36 +1,45 @@
 
 <main class="main">
   <div class="content">
-    
-
-    <mat-drawer-container class="drawer-container" autosize>
-      <mat-drawer #drawer class="sidenav" mode="side">
-        <div *ngFor="let item of menu" >
-          <button mat-raised-button>
-            {{item}}
-          </button>
+    <!-- Nav -->
+    <div class="navbar drawer bg-primary text-primary-content">
+        <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content">
+          <!-- Page content here -->
+          <label for="my-drawer" class="btn btn-square btn-ghost drawer-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </label>
+        </div> 
+        <div class="drawer-side">
+          <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+          <ul tabindex="0" class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+            <li *ngFor="let item of menu"><a [ngClass]="{active: item.isActive == true}">{{item.name}}</a></li>
+          </ul>
         </div>
-      </mat-drawer>  
-      
-      <mat-toolbar color="primary">
-        <mat-toolbar-row>
-          <button mat-icon-button class="example-icon" (click)="drawer.toggle()" aria-label="Example icon-button with menu icon">
-            <mat-icon>menu</mat-icon>
-          </button>
-          <span>{{title}}</span>
-          <span class="toolbar-spacer"></span>
-          
-          <button *ngIf="profile.id === undefined" mat-icon-butto aria-label="icon-button with login icon">
-            <mat-icon>login</mat-icon>
-          </button>
-          <mat-icon *ngIf="profile.id !== undefined">person</mat-icon>
-          <button (click)="logout()" *ngIf="profile.id !== undefined" mat-icon-button aria-label="icon-button with logout icon">
-            <mat-icon>logout</mat-icon>
-          </button>
-        </mat-toolbar-row>
-      </mat-toolbar>
-    </mat-drawer-container>
-    
+      <div class="flex-1">  
+        <a class="btn btn-ghost text-xl">{{title}}</a>
+      </div>
+      <div class="flex-none">
+        <div *ngIf="isLoggedIn()" class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+            <div class="w-10 rounded-full">
+              <img alt="Tailwind CSS Navbar component" src="https://daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg" />
+            </div>
+          </div>
+          <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+            <div *ngIf="isLoggedIn()">{{profile.name}}</div>
+            <li><a>Settings</a></li>
+            <li><a (click)="logout()">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  <!-- Content -->
+  <app-login 
+    (loggedIn)="onLogin($event)"
+    [showLogin] = showLogin>
+  </app-login>    
   </div>
 </main>
 

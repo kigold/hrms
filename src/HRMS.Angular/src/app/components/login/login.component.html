@@ -1,12 +1,30 @@
 <div class="container">    
-    <h2>Login</h2> 
-      <mat-form-field class="field">
-        <mat-label>Email</mat-label>
+    <!-- <h2>Login</h2> 
+      <div class="field">
+        <div>Email</div>
         <input matInput [(ngModel)]="model.email" placeholder="john@doe.com">
-      </mat-form-field>
-      <mat-form-field class="field">
-          <mat-label>Password</mat-label>
+      </div>
+      <div class="field">
+          <div>Password</div>
           <input type="password" matInput [(ngModel)]="model.password">
-        </mat-form-field>
-      <button class="field" mat-raised-button color="primary" (click)="login()">Submit</button>
+      </div>
+      <button class="field" mat-raised-button color="primary" (click)="login()">Submit</button> -->
+      <!-- <button class="btn" onclick="login_modal.showModal()">open modal</button> -->
+  <input type="checkbox" [checked]="showLogin" id="login_modal" class="modal-toggle">
+  <dialog id="login_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Login</h3>
+      <div class="join join-vertical flex flex-col justify-center gap-9 px-2">
+        <input class="input input-bordered join-item" [(ngModel)]="model.email" placeholder="Email"/>
+        <input class="input input-bordered join-item password" type="password" [(ngModel)]="model.password" placeholder="Password"/>
+        <button class="btn join-item rounded-r-full" (click)="login()">Login</button>
+      </div>
+      <div class="modal-action">
+        <form method="dialog">
+          <!-- if there is a button in form, it will close the modal -->
+          <button class="btn">Close</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
   </div>  

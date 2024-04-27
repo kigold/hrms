@@ -1,5 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, EventEmitter, Input, input, Output } from '@angular/core';
 import { LoginRequest } from '../../models/auth';
 
 @Component({
@@ -8,22 +7,24 @@ import { LoginRequest } from '../../models/auth';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  constructor(public dialog: MatDialog) {
+  constructor() {
   }
+  showLogin_: boolean = false;
   model: LoginRequest = {
     email : "",
     password: ""
   };
 
+  @Input() showLogin: boolean = false;
   @Output() loggedIn = new EventEmitter<LoginRequest>()
-  @Output() toggleDialog = new EventEmitter()
+  @Output() toggleModal = new EventEmitter()
   
   login() {
     this.loggedIn.emit(this.model);
   }
 
   toggle() {
-    this.toggleDialog.emit();
+    this.toggleModal.emit();
   }
 
 }
