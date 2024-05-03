@@ -1,0 +1,64 @@
+<div *ngIf="toastService.data.show" class="toast toast-top toast-end"
+    (mouseenter)="stopCountDown()"
+    (mouseleave)="countDown()"
+    [@openClose]="toastService.data && toastService.data.show ? 'open' : 'closed'"
+>
+    <div *ngIf="toastService.data.type == ToastTyped?.error" class="alert alert-error flex flex-col">      
+        <div>
+            <div class="flex justify-between text-primary-content">
+                <h4 class="card-normal">{{toastService.data.title}}  </h4>      
+                <button (click)="close()" class="btn btn-circle btn-xs btn-secondary mx-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div class="card">
+                <h3 *ngFor="let item of toastService.data.errors"> -- {{item}}</h3>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="toastService.data.type == ToastTyped?.info" class="alert alert-info">
+        <div class="flex justify-between text-primary-content">
+            <h4 class="card-normal">{{toastService.data.title}}  </h4>      
+            <button (click)="close()" class="btn btn-circle btn-xs btn-secondary mx-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </div>
+
+    <div *ngIf="toastService.data.type == ToastTyped?.success" class="alert alert-success">
+        <div class="flex justify-between text-primary-content">
+            <h4 class="card-normal">{{toastService.data.title}}  </h4>      
+            <button (click)="close()" class="btn btn-circle btn-xs btn-secondary mx-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </div>
+    <progress class="progress progress-accent" value="{{toastService.data.progressWidth}}" max="100"></progress>
+</div>
+
+<!-- <div
+  (mouseenter)="stopCountDown()"
+  (mouseleave)="countDown()"
+  class="toast_wrapper"
+  [@openClose]="toastService.data && toastService.data.show ? 'open' : 'closed'"
+>
+  <div class="inner_wrapper">
+    <div class="flex" *ngIf="toastService.data">
+      <div class="toast_content">
+        <h5 class="toast_title">
+          {{ toastService.data.title }}
+        </h5>
+        <div class="toast_text">
+          {{ toastService.data.content }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="progress_bar"
+    [ngClass]="{ success: toastService.data && toastService.data.type === 1 }"
+    #element
+  ></div>
+</div> -->

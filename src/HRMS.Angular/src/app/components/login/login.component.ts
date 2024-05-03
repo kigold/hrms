@@ -1,8 +1,11 @@
-import { Component, EventEmitter, Input, input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { LoginRequest } from '../../models/auth';
+import { FormControl, FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
+  imports: [ FormsModule ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })

@@ -1,0 +1,60 @@
+<div class="container">    
+  <button (click)="toggleForm()" *ngIf="!showForm" class="btn btn-accent m-4">Create Employee</button>
+  <input type="checkbox" [checked]="showForm" id="login_modal" class="modal-toggle">
+  <dialog id="create_modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">New Employee</h3>
+      <form (ngSubmit)="createEmployee()" [formGroup]="employeeForm" class="join join-vertical flex flex-col justify-center gap-4 px-2 pt-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Firstname
+                <input id="firstName" formControlName="firstName" type="text" class="grow" placeholder="Firstname" />
+                <div class="error" *ngIf="employeeForm.controls.firstName.errors as firstNameError">
+                    <div *ngIf="firstNameError" class="text-red-400">Firstname is required</div>
+                </div>
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Lastname
+                <input id="lastName" formControlName="lastName" type="text" class="grow" placeholder="Lastname" />
+                <div class="error" *ngIf="employeeForm.controls.lastName.errors as lastNameError">
+                    <div *ngIf="lastNameError" class="text-red-400">Lastname is required</div>
+                </div>
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Email
+                <input id="email" formControlName="email" type="text" class="grow" placeholder="email@site.com" />
+                <div class="error" *ngIf="employeeForm.controls.email.errors as emailError">
+                    <div *ngIf="emailError?.['required']" class="text-red-400">Email is required</div>
+                    <div *ngIf="emailError?.['email']" class="text-red-400">Email must be Valid</div>
+                </div>
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Phone Number
+                <input id="address" formControlName="phone" type="text" class="grow" placeholder="Phone" />
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Country
+            <input id="address" formControlName="country" type="text" class="grow" placeholder="Country" />
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Address
+            <input id="address" formControlName="address" type="text" class="grow" placeholder="Address" />
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Position
+            <input id="address" formControlName="position" type="text" class="grow" placeholder="Position" />
+            </label>
+            <label class="input input-bordered flex items-center gap-2">
+                Department
+            <input id="address" formControlName="department" type="text" class="grow" placeholder="Department" />
+            </label>
+        <button [disabled]="!employeeForm.valid" class="btn join-item rounded-r-full">Create</button>
+        </form>
+      <div class="modal-action">
+        <form method="dialog">
+          <!-- if there is a button in form, it will close the modal -->
+          <button (click)="toggleForm()" class="btn">Close</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+  </div>  

@@ -3,26 +3,33 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import {  HttpClientModule } from '@angular/common/http';
+import {  HttpClientModule, provideHttpClient, withInterceptors } from '@angular/common/http';
 
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { LoginComponent } from './components/login/login.component';
+import { CreateEmployeeComponent } from './employee/create-employee/create-employee.component';
+import { headerInterceptor } from './interceptor/header.interceptor';
+import { ToastComponent } from './components/toast/toast.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
-    LoginComponent
   ],
   imports: [
     AppRoutingModule,
     BrowserModule,
     FormsModule,
-    HttpClientModule
+    ReactiveFormsModule,
+    HttpClientModule,
+    ToastComponent,
+    LoginComponent,
+    CreateEmployeeComponent
   ],
   providers: [
-    provideAnimationsAsync()
+    provideAnimationsAsync(),
+    provideHttpClient(withInterceptors([headerInterceptor]))
   ],
   bootstrap: [AppComponent]
 })

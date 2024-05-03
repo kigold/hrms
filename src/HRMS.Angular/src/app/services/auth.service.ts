@@ -13,53 +13,113 @@ export class AuthService implements BaseService {
 
 	private SERVER_URL = "https://localhost:7178/auth"//config.apiBaseUrl;
 	constructor(private httpClient: HttpClient, private helperService: HelperService) { 
-    console.log("Initiating Auth Service", httpClient)
-  }
+	}
 
-  appname: string = "hrms";
+  	appname: string = "hrms";
 
 	login(payload: LoginRequest){
 		const requestOptions = {
 			headers: {
-			  'Content-Type': 'application/x-www-form-urlencoded',
+				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-		  };
+		};
 
 		const formPayload = new URLSearchParams();
 		formPayload.append('grant_type', 'password');
 		formPayload.append('password', payload.password);
 		formPayload.append('username', payload.email);
-
-		//return this.httpClient.post<LoginResponseModel>(this.SERVER_URL + '/connect/token', formPayload, requestOptions);
-		return of<LoginResponseModel>(TOKEN);
+		
+		return this.httpClient.post<LoginResponseModel>(this.SERVER_URL + '/connect/token', formPayload, requestOptions);
+		//return of<LoginResponseModel>(TOKEN);
 	}
 
-  logout() {
-		localStorage.removeItem(`${this.appname}-profile`);
-		localStorage.removeItem(`${this.appname}-token`);
-		localStorage.removeItem(`${this.appname}-refresh_token`);
-		localStorage.removeItem(`${this.appname}-token_expiry`);
-		window.location.reload();
+	logout() {
+			this.removeStoreItem('profile');
+			this.removeStoreItem('token');
+			this.removeStoreItem('refresh_token');
+			this.removeStoreItem('token_expiry');
+			window.location.reload();
 	}
 
-  getUserProfile () {
-		const userString = localStorage.getItem(`${this.appname}-profile`);
+  	getUserProfile () {
+		const userString = this.getStoreItem('profile');
 		if (userString != undefined)
 			return JSON.parse(userString) as User;
 		return undefined;
 	}
 
-  storeAuthInLocalStorage(payload: LoginResponseModel): User{
-		console.log(payload)
+  	storeAuthInLocalStorage(payload: LoginResponseModel): User{
 		const user = this.toUser(jwtDecode (payload.access_token));
-		localStorage.setItem(`${this.appname}-profile`, JSON.stringify(user));
-		localStorage.setItem(`${this.appname}-token`, payload.access_token);
-		localStorage.setItem(`${this.appname}-refresh_token`, payload.refresh_token);
-		localStorage.setItem(`${this.appname}-token_expiry`, new Date(new Date().getTime() + ((payload.expires_in/60) * 60000)).toString());
+		this.setStoreItem('profile', JSON.stringify(user));
+		this.setStoreItem('token', payload.access_token);
+		this.setStoreItem('refresh_token', payload.refresh_token);
+		this.setStoreItem('token_expiry', new Date(new Date().getTime() + ((payload.expires_in/60) * 60000)).toString());
 		return user as User;
 	}
 
-  private toUser(u:any): User{
+	getToken() : string{
+		return this.getStoreItem('token') as string;
+	}
+	
+	isTokenExpired() {
+		const expiryDate = this.getStoreItem('token_expiry');
+		if (!expiryDate)
+			return true;
+
+		return (new Date().getTime() > Date.parse(expiryDate));
+	}
+
+	refreshAccessTokenAndStoreToken() {
+		const requestOptions = {
+			headers: {
+			  'Content-Type': 'application/x-www-form-urlencoded',
+			},
+		};
+
+		const refresh_token = this.getStoreItem('refresh_token');
+		const formPayload = new URLSearchParams();
+		formPayload.append('grant_type', 'refresh_token');
+		formPayload.append('refresh_token', refresh_token as string);
+
+		this.httpClient.post<LoginResponseModel>(this.SERVER_URL + '/connect/token', formPayload, requestOptions)
+			.subscribe({
+				next: (res) => {
+            console.log("refreshed Token", res.access_token)
+						this.storeAuthInLocalStorage(res as LoginResponseModel);
+					},
+				error: (e) => this.helperService.handleError(e)
+			});
+	}
+
+	refreshAccessToken() {
+		const requestOptions = {
+			headers: {
+			  'Content-Type': 'application/x-www-form-urlencoded',
+			},
+		};
+
+		const refresh_token = this.getStoreItem('refresh_token');
+
+		const formPayload = new URLSearchParams();
+		formPayload.append('grant_type', 'refresh_token');
+		formPayload.append('refresh_token', refresh_token as string);
+
+		return this.httpClient.post<LoginResponseModel>(this.SERVER_URL + '/connect/token', formPayload, requestOptions);
+	}
+
+	setStoreItem(key: string, value: string){
+		localStorage.setItem(`${this.appname}-${key}`, value);
+	}
+
+	removeStoreItem(key: string){
+		localStorage.removeItem(`${this.appname}-${key}`);
+	}
+
+	getStoreItem(key: string){
+		return localStorage.getItem(`${this.appname}-${key}`)
+	}
+
+	toUser(u:any): User{
 		return {
 			id: parseInt(u.sub as string),
 			name: u.name,

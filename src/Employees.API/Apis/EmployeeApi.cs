@@ -35,7 +35,8 @@ namespace Employees.API.Apis
         //POST /Employee
         public static async Task<Results<Ok<EmployeeResponse>, ValidationProblem>> CreatedEmployee(IEmployeeService employeeService, CreateEmployee request)
         {
-            var result = await employeeService.CreateEmployee(request);
+            //TODO Get CompanyId
+            var result = await employeeService.CreateEmployee(request with { CompanyId = 1 });
             if (result.HasError)
                 return result.ValidationProblem();
 

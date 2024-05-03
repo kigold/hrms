@@ -2,7 +2,7 @@
 <main class="main">
   <div class="content">
     <!-- Nav -->
-    <div class="navbar drawer bg-primary text-primary-content">
+    <div class="navbar drawer bg-primary text-primary-content z-10">
         <input id="my-drawer" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content">
           <!-- Page content here -->
@@ -13,7 +13,7 @@
         <div class="drawer-side">
           <label for="my-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
           <ul tabindex="0" class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-            <li *ngFor="let item of menu"><a [ngClass]="{active: item.isActive == true}">{{item.name}}</a></li>
+            <li *ngFor="let item of menu"><a [routerLink]="item.link" [routerLinkActive]="['active']">{{item.name}}</a></li>
           </ul>
         </div>
       <div class="flex-1">  
@@ -35,13 +35,12 @@
       </div>
     </div>
 
-  <!-- Content -->
+  <!-- Content -->  
+  <app-toast></app-toast>
   <app-login 
     (loggedIn)="onLogin($event)"
     [showLogin] = showLogin>
-  </app-login>    
-  </div>
+  </app-login>
+  </div>  
+  <router-outlet></router-outlet>
 </main>
-
-
-<router-outlet></router-outlet>
