@@ -1,55 +1,55 @@
 import { Component } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { LoginComponent } from './components/login/login.component';
 import { AuthService } from './services/auth.service';
 import { LoginRequest, User } from './models/auth';
+import { Menu } from './models/menu';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrl: './app.component.css',
 })
 export class AppComponent {
-  loginDialogRef: MatDialogRef<LoginComponent, any> = <MatDialogRef<LoginComponent, any>>{}
-  menu = ["Onboard", "Leave Management", "Logout"];
+  menu: Menu[] = [{id: 1, isActive: false, name: "Employee", link:'/employee' }, {id: 2, isActive: true, name: "Leave Management" , link:'/leave'}, {id: 3, isActive: false, name: "Setting" , link:'/'}];
   profile: User = <User>{};
   showLogin: boolean = false;
-  showSideNav = false;
   title = 'HRMS';
+  loading: boolean = false;
 
-  constructor(public dialog: MatDialog, private authService: AuthService){}
+  constructor(private authService: AuthService
+  ){}
 
   ngOnInit(){
+    this.setUserProfile();
     if (!this.isLoggedIn()){
       console.log("User is not Logged in, Show login screen")
       this.showLogin = true;
-      this.openLoginDialog();
     }
   }
 
-  isLoggedIn(){
+  setUserProfile(){
     const user = this.authService.getUserProfile();
     console.log("Get Profile", user)
     if (user == undefined)
-      return false;
+      return;
     this.profile = {
       id: user.id,
       name: user.name,
       username: user.username,
       avatar: user.avatar
     }
-    return true;
   }
 
-  openLoginDialog() {
-    this.loginDialogRef = this.dialog.open(LoginComponent)
-    this.loginDialogRef.componentInstance.loggedIn.subscribe((request: LoginRequest) => this.onLogin(request))
+  isLoggedIn(){
+    if (this.profile == undefined || this.profile.id == undefined)
+      return false;
+    return true;
   }
 
   onLogin(request: LoginRequest){
     this.authService.login(request)
     .subscribe({
       next: (res) => {
+        console.log(">>>>>> logging in ", res)
         let user = this.authService.storeAuthInLocalStorage(res);
         this.profile = {
           id: user.id,
@@ -57,7 +57,7 @@ export class AppComponent {
           username: user.username,
           avatar: user.avatar
         };
-        this.loginDialogRef.close();
+        this.showLogin = false;
       },
       error: (e) => this.authService.handleError(e)
     })

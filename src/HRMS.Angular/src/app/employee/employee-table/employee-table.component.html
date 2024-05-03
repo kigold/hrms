@@ -1,0 +1,24 @@
+<div class="overflow-x-auto flex flex-col mx-10">
+    <table class="table table-zebra table-md">
+      <thead>
+        <tr>
+          <th *ngFor="let header of headers"> {{header}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let employee of employees">
+          <td>{{employee.firstName}}</td>
+          <td>{{employee.lastName}}</td>
+          <td>{{employee.email}}</td>
+          <td>{{employee.staffId}}</td>
+          <td>{{employee.position}}</td>
+          <td>{{employee.department}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="join flex flex-row justify-center pt-2">
+        <button (click)="onPrevPage()" [disabled]="!pageData.hasPrevPage" class="join-item btn bg-primary">«</button>
+        <button class="join-item btn">Page {{pageData.page}} of {{pageData.totalPage}} Pages</button>
+        <button (click)="onNextPage()" [disabled]="!pageData.hasNextPage" class="join-item btn bg-primary">»</button>
+      </div>
+  </div>

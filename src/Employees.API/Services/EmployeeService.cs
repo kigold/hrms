@@ -194,6 +194,7 @@ namespace Employees.API.Services
                     source.Address,
                     source.Phone,
                     source.Country,
+                    source.StaffId,
                     source.Qualifications.Select(x => x.ToQualificationResponse())
                 );
         }

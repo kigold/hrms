@@ -1,29 +1,33 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { LoginRequest } from '../../models/auth';
+import { FormControl, FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
+  imports: [ FormsModule ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  constructor(public dialog: MatDialog) {
+  constructor() {
   }
+  showLogin_: boolean = false;
   model: LoginRequest = {
     email : "",
     password: ""
   };
 
+  @Input() showLogin: boolean = false;
   @Output() loggedIn = new EventEmitter<LoginRequest>()
-  @Output() toggleDialog = new EventEmitter()
+  @Output() toggleModal = new EventEmitter()
   
   login() {
     this.loggedIn.emit(this.model);
   }
 
   toggle() {
-    this.toggleDialog.emit();
+    this.toggleModal.emit();
   }
 
 }

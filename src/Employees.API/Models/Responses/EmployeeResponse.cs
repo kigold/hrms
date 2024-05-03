@@ -7,6 +7,7 @@
             string Address,
             string Phone,
             string Country,
+            string StaffId,
             IEnumerable<QualificationResponse> Qualifications
         );
 }
