@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseService } from './base.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HelperService } from './helper.service';
-import { LoginRequest, LoginResponseModel, User } from '../models/auth';
+import { LoginRequest, LoginResponseModel, AuthUser } from '../models/auth';
 import { jwtDecode } from 'jwt-decode';
 import { Observable, of } from 'rxjs';
 
@@ -44,17 +44,17 @@ export class AuthService implements BaseService {
   	getUserProfile () {
 		const userString = this.getStoreItem('profile');
 		if (userString != undefined)
-			return JSON.parse(userString) as User;
+			return JSON.parse(userString) as AuthUser;
 		return undefined;
 	}
 
-  	storeAuthInLocalStorage(payload: LoginResponseModel): User{
+  	storeAuthInLocalStorage(payload: LoginResponseModel): AuthUser{
 		const user = this.toUser(jwtDecode (payload.access_token));
 		this.setStoreItem('profile', JSON.stringify(user));
 		this.setStoreItem('token', payload.access_token);
 		this.setStoreItem('refresh_token', payload.refresh_token);
 		this.setStoreItem('token_expiry', new Date(new Date().getTime() + ((payload.expires_in/60) * 60000)).toString());
-		return user as User;
+		return user as AuthUser;
 	}
 
 	getToken() : string{
@@ -119,7 +119,7 @@ export class AuthService implements BaseService {
 		return localStorage.getItem(`${this.appname}-${key}`)
 	}
 
-	toUser(u:any): User{
+	toUser(u:any): AuthUser{
 		return {
 			id: parseInt(u.sub as string),
 			name: u.name,

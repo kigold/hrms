@@ -12,7 +12,7 @@ import { PageData } from '../../models/util';
 })
 export class EmployeeTableComponent {
 
-  headers: string[] = ['FIrstname', 'Lastname', 'Email', 'StaffId', 'Position', 'Department' ]
+  headers: string[] = ['Firstname', 'Lastname', 'Email', 'StaffId', 'Position', 'Department' ]
   @Input() employees: Employee[] = [];
   @Input() pageData: PageData = {
     page: 0,

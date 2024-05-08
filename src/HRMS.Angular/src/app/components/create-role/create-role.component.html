@@ -1,0 +1,44 @@
+<div class="container">
+    <input type="checkbox" [checked]="showForm" id="create_role_modal" class="modal-toggle">
+    <dialog id="create_role_modal" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <div class="flex flex-col w-full lg:flex-row">
+            <div class="flow">
+                <h3 class="font-bold text-lg">New Role</h3>
+                <form (ngSubmit)="createRole()" [formGroup]="createRoleForm" class="join join-vertical flex flex-col justify-center gap-4 px-2 pt-4">
+                    <label class="input input-bordered flex items-center gap-2">
+                        Rolename
+                        <input id="name" formControlName="name" type="text" class="grow" placeholder="Role Name" />
+                        <div class="error" *ngIf="createRoleForm.controls['name'].errors as nameError">
+                            <div *ngIf="nameError" class="text-red-400">Rolename is required</div>
+                        </div>
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Permissions
+                        <input id="permissionIds" formControlName="permissionIds" type="text" class="grow" placeholder="Permissions" />
+                        <div class="error" *ngIf="createRoleForm.controls['permissionIds'].errors as permissionError">
+                            <div *ngIf="permissionError" class="text-red-400">Permissions are required</div>
+                        </div>
+                    </label>
+                <button [disabled]="!createRoleForm.valid" class="btn join-item rounded-r-full">Create</button>
+                </form>
+            </div>
+            <div class="divider lg:divider-horizontal">|</div> 
+            <div class="grid flex-grow h-32 card rounded-box place-items-center">
+                <app-permissions-list
+                 [permissions]="permissions"
+                 (onSelectPermission)="selectPermission($event)"
+                 (onSelectAllPermissions)="selectAllPermissions()"
+                 (onDeselectAllPermissions)="deselectAllPermissions()"
+                >
+                </app-permissions-list>
+            </div>
+        </div>
+        <div class="modal-action">
+        <form method="dialog">
+            <button (click)="toggleForm()" class="btn">Close</button>
+        </form>
+        </div>
+    </div>
+</dialog>
+</div>

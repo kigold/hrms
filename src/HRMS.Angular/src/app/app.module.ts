@@ -11,6 +11,8 @@ import { LoginComponent } from './components/login/login.component';
 import { CreateEmployeeComponent } from './employee/create-employee/create-employee.component';
 import { headerInterceptor } from './interceptor/header.interceptor';
 import { ToastComponent } from './components/toast/toast.component';
+import { UserComponent } from './pages/user/user.component';
+import { RoleComponent } from './pages/role/role.component';
 
 
 @NgModule({
@@ -24,7 +26,9 @@ import { ToastComponent } from './components/toast/toast.component';
     ReactiveFormsModule,
     HttpClientModule,
     ToastComponent,
-    LoginComponent,
+    LoginComponent,    
+    UserComponent,
+    RoleComponent,
     CreateEmployeeComponent
   ],
   providers: [

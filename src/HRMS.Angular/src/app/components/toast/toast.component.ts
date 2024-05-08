@@ -34,7 +34,7 @@ export class ToastComponent {
   ToastTyped? = ToastType;
   progressBar: number = 0;
   progressInterval?: any;
-  toastTimeout: number = 500;
+  toastTimeout: number = 50;
 
   constructor(public toastService: ToastService){
     this.toastService.open.subscribe((data) => {

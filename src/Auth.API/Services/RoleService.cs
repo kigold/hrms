@@ -1,8 +1,11 @@
 ﻿using Auth.API.Data.Models;
 using Auth.API.Models.Request;
+using Auth.API.Models.Requests;
 using Auth.API.Models.Response;
+using Auth.API.Models.Responses;
 using Microsoft.AspNetCore.Identity;
 using Shared.Extensions;
+using Shared.Messaging;
 using Shared.Pagination;
 using Shared.Permissions;
 using Shared.Repositories;
@@ -14,12 +17,14 @@ namespace Auth.API.Services
 {
     public interface IRoleService
     {
+        Task<ResultModel<PagedList<UserResponse>>> GetUsers(GetUsersRequest query);
         Task<ResultModel<PagedList<RoleResponse>>> GetRoles(PagedRequest query);
         Task<ResultModel<IEnumerable<PermissionResponse>>> GetAllPermissions();
         Task<ResultModel<IEnumerable<string>>> GetUserRoles(long userId);
         Task<ResultModel<List<PermissionResponse>>> GetRolePermissions(string roleName);
 
         Task<ResultModel<RoleResponse>> CreateRole(CreateRoleRequest request);
+        Task<ResultModel<RoleResponse>> CloneRole(CloneRoleRequest request);
         Task<ResultModel> AddPermissionsToRole(PermissionsRequest request);
         Task<ResultModel> RemovePermissionsFromRole(PermissionsRequest request);
         Task<ResultModel> AddUserToRoles(UpdateUserRolesRequest request);
@@ -158,6 +163,49 @@ namespace Auth.API.Services
             return new ResultModel<RoleResponse>(new RoleResponse(role.Id, role.Name));
         }
 
+        public async Task<ResultModel<RoleResponse>> CloneRole(CloneRoleRequest request)
+        {
+            var validator = new CloneRoleRequestValidator();
+            var result = validator.Validate(request);
+            if (!result.IsValid)
+            {
+                return new ResultModel<RoleResponse>() { ErrorMessages = result.Errors.Select(x => x.ErrorMessage).ToList() };
+            }
+
+            var role = await _roleManager.FindByNameAsync(request.Name);
+            if (role != null)
+                return new ResultModel<RoleResponse>("Role already exists");
+
+            role = new Role
+            {
+                Name = request.Name
+            };
+
+            //Get Permissions of Roles to Clone
+            var permissions = new List<Permission>();
+            foreach(var roleName in request.RolesToClone)
+            {
+                var roleToClone = await _roleManager.FindByNameAsync(roleName);
+                if (roleToClone == null)
+                    continue;
+
+                permissions = permissions.Union(await QueryRolePermissions(roleName)).ToList();
+            }
+            if (permissions.Count < 1)
+                return new ResultModel<RoleResponse>("No permission found in roles to clone");
+
+            var createResult = await _roleManager.CreateAsync(role);
+
+            if (!createResult.Succeeded)
+                return new ResultModel<RoleResponse>(createResult.Errors.ToString());
+
+            var addPermissionResult = await AddPermissionToRole(role, permissions.Select(x => (int)x).ToList());
+            if (addPermissionResult.HasError)
+                return new ResultModel<RoleResponse>(addPermissionResult.ErrorMessages);
+
+            return new ResultModel<RoleResponse>(new RoleResponse(role.Id, role.Name));
+        }
+
         public async Task<ResultModel<bool>> DeleteRole(string roleName)
         {
             var role = await _roleManager.FindByNameAsync(roleName);
@@ -187,24 +235,41 @@ namespace Auth.API.Services
 
         public async Task<ResultModel<List<PermissionResponse>>> GetRolePermissions(string roleName)
         {
-            var role = await _roleManager.FindByNameAsync(roleName);
-            if (role == null)
-                return new ResultModel<List<PermissionResponse?>>("Role not found");
-
-            var permissions = (await _roleManager.GetClaimsAsync(role))
-                                .Where(x => Enum.IsDefined(typeof(Permission), x.Value))
-            .Select(x => Enum.Parse<Permission>(x.Value));
+            var permissions = await QueryRolePermissions(roleName);
 
             return new ResultModel<List<PermissionResponse>>(
                 permissions.Select(x => new PermissionResponse((int)x, x.ToString(), x.GetDescription())).ToList());
 
         }
 
+        private async Task<IEnumerable<Permission>> QueryRolePermissions(string roleName) //TODO Get ROles and Permissions with a single DB Query
+        {
+            var role = await _roleManager.FindByNameAsync(roleName);
+            if (role == null)
+                return Enumerable.Empty<Permission>();
+
+            return (await _roleManager.GetClaimsAsync(role))
+                .Where(x => Enum.IsDefined(typeof(Permission), x.Value))
+                    .Select(x => Enum.Parse<Permission>(x.Value)).ToList();
+        }
+
+        public async Task<ResultModel<PagedList<UserResponse>>> GetUsers(GetUsersRequest query)
+        {
+            var users = _userRepo.Get();
+            if (!string.IsNullOrEmpty(query.Query))
+            {
+                users = users.Where(x => x.Firstname == query.Query || x.Lastname == query.Query || x.Email == query.Query);
+            }
+            var result = PagedList<User>.ToPagedList(users.OrderBy(x => x.Id), query.PageNumber, query.PageSize);
+
+            return new ResultModel<PagedList<UserResponse>>(new PagedList<UserResponse>(result.Items.Select(x => x.ToUserResponse()), result.TotalCount, query.PageNumber, query.PageSize));
+        }
+
         public async Task<ResultModel<PagedList<RoleResponse>>> GetRoles(PagedRequest query)
         {
             var totalRoles = _roleManager.Roles.Count();
             var roles = new PagedList<RoleResponse>(
-                _roleManager.Roles.Skip((query.PageNumber - 1) * query.PageSize).Take(query.PageSize).OrderBy(x => x.Name).ToList().Select(x => new RoleResponse(x.Id, x.Name)),
+                _roleManager.Roles.Skip((query.PageNumber - 1) * query.PageSize).Take(query.PageSize).OrderBy(x => x.Id).ToList().Select(x => new RoleResponse(x.Id, x.Name)),
                 totalRoles,
                 query.PageNumber,
                 query.PageSize);
@@ -253,6 +318,20 @@ namespace Auth.API.Services
                 return new ResultModel($"failed to remove role {request.RoleName} to user {user.FullName}. {roleResult.Errors.FirstOrDefault()?.Description}");
 
             return new ResultModel();
+        }
+    }
+
+    public static class MapperExtensions
+    {
+        public static UserResponse ToUserResponse(this User source)
+        {
+            return new UserResponse(
+                source.Id,
+                source.Firstname,
+                source.Lastname,
+                source.Email??"",
+                source.Avatar??""
+                );
         }
     }
 }
