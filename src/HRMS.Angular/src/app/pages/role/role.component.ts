@@ -1,16 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { PageData, PageRequest } from '../../models/util';
-import { CreateRole, Permission, PermissionInput, Role } from '../../models/role';
+import { CreateRole, EditRole, Permission, PermissionInput, Role, RolePermissions } from '../../models/role';
 import { HelperService } from '../../services/helper.service';
 import { UserService } from '../../services/user.service';
 import { CreateRoleComponent } from '../../components/create-role/create-role.component';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { EditRoleComponent } from '../../components/edit-role/edit-role.component';
+import { Observable, of, mergeMap, lastValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-role',  
   standalone: true,
-  imports: [CreateRoleComponent, CommonModule],
+  imports: [CreateRoleComponent, EditRoleComponent, CommonModule],
   templateUrl: './role.component.html',
   styleUrl: './role.component.css'
 })
@@ -30,10 +32,26 @@ export class RoleComponent {
     permissionIds: []
   };
   createRoleForm = new FormGroup({
-    name: new FormControl<string>(this.createRoleRequest.name??"", [Validators.required]),
-    permissionIds: new FormControl<number[]>(this.createRoleRequest.permissionIds??[], [Validators.required])
+    name: new FormControl<string>("", [Validators.required]),
+    permissionIds: new FormControl<number[]>([], [Validators.required])
+  });
+  rolePermissions: RolePermissions = {
+    id: 0,
+    name: "",
+    permissions: []
+  }
+  editRoleRequest: EditRole = {
+    roleName: "",
+    addPermissionIds: [],
+    removePermissionIds: []
+  };
+  initialPermissions: number[] = []
+  editRoleForm = new FormGroup({
+    name: new FormControl<string>("", [Validators.required]),
+    permissionIds: new FormControl<number[]>([], [Validators.required]),
   });
   showCreateRole: boolean = false
+  showEditRole: boolean = false
 
   headers: string[] = ['Id', 'Name', 'Actions']
 
@@ -83,8 +101,7 @@ export class RoleComponent {
     .subscribe({
       next: () => {
         //clear Role Form
-        this. createRoleRequest = { name: "", permissionIds: [] }
-        this.createRoleForm.reset({...this. createRoleRequest})
+        this.createRoleForm.reset({...this.createRoleRequest})
 
         this.loading = false;
         this.showCreateRole = false;
@@ -100,7 +117,7 @@ export class RoleComponent {
     return false;
   }
 
-  onDeleteRole(roleName: string){
+  deleteRole(roleName: string){
     this.loading = true;
     this.userService.deleteRole(roleName)
     .subscribe({
@@ -115,44 +132,83 @@ export class RoleComponent {
     })
   }
 
-  editRole(roleName: string){
-    console.log(">>>>> edit role", roleName)
-  }
+  onEditRole(payload: EditRole){
+    console.log("Edit Payload", payload)
+    this.loading = true;
+    this.userService.updateRolePermissions(payload)
+    .subscribe({
+      next: () => {
+        //clear Role Form
+        this.editRoleForm.reset({
+          name: "",
+          permissionIds: []
+        })
 
-  onSelectPermission(permission: Permission){
-    this.permissions.forEach(element => {
-        if (permission.id == element.id){
-            element.checked = !element.checked;
-        }
-    });
-    const index = this.createRoleRequest.permissionIds?.indexOf(permission.id) ?? -1
-    if (index > -1){      
-      this.createRoleRequest.permissionIds?.splice(index, 1)
-    }else{
-      this.createRoleRequest.permissionIds?.push(permission.id);
-    }    
-    this.createRoleForm.patchValue({permissionIds: this.createRoleRequest.permissionIds})
-  }
-
-  onSelectAllPermissions(){
-    this.permissions.forEach(permission => {   
-      permission.checked = true;
-    });
-    this.createRoleRequest.permissionIds = this.permissions.map(x => x.id);
-    this.createRoleForm.patchValue({permissionIds: this.createRoleRequest.permissionIds})
-  }
-
-  onDeselectAllPermissions(){
-    this.permissions.forEach(permission => {   
-      permission.checked = false;
-    });
-    this.createRoleRequest.permissionIds = [];
-    this.createRoleForm.patchValue({permissionIds: []})
+        this.loading = false;
+        this.showEditRole = false;
+        this.helperService.toastSuccess(`Role successfully Created`);
+        this.getRoles();
+      },
+      error: (e) => {
+        this.loading = false;
+        this.userService.handleError(e);
+      }
+    })
+    return false;
   }
 
   onToggleCreateRoleForm(){
     this.showCreateRole = !this.showCreateRole
     this.getPermissions();
+  }
+
+  async showEditRoleForm(roleName: string){
+    this.showEditRole = true
+    this.loading = true;
+    this.rolePermissions = {
+      id: 0,
+      name: roleName,
+      permissions: []
+    }
+    this.editRoleForm.patchValue({
+      name: roleName,
+      permissionIds: []
+    })
+
+    this.userService.getAllPermissions()
+    .subscribe({
+      next: (res) => {
+        var permissions = res.map((x) => ({...x, checked: false}))      
+        this.userService.getRolePermissions(roleName)
+        .subscribe({
+          next: (rolePermissions) => {
+            this.initialPermissions = rolePermissions.map(x => x.id)
+            this.rolePermissions.permissions = permissions
+            rolePermissions.forEach(x => {
+              const permission = this.rolePermissions.permissions?.find(p => p.id == x.id)
+              if (permission != undefined){      
+                permission.checked = true;
+              }
+            })
+            this.editRoleRequest.roleName = roleName,
+            this.editRoleForm.patchValue({
+              name: roleName,
+              permissionIds: rolePermissions.map(x => x.id)
+            })
+            this.loading = false;       
+          },
+          error: (e) => {
+            this.loading = false;
+            this.userService.handleError(e);
+          }
+        })
+      },
+      error: (e) => this.userService.handleError(e)
+    })  
+  }
+
+  onCloseEditRoleForm(){
+    this.showEditRole = false;
   }
 
   onNextPage(){

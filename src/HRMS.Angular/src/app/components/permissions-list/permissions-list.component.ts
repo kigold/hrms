@@ -10,12 +10,16 @@ import { CommonModule } from '@angular/common';
   styleUrl: './permissions-list.component.css'
 })
 export class PermissionsListComponent {
-  selectAllPermissions: boolean = false;
-
   @Input() permissions: PermissionInput[] = []
   @Output() onSelectPermission = new EventEmitter<Permission>()
   @Output() onSelectAllPermissions = new EventEmitter<Permission>()
   @Output() onDeselectAllPermissions = new EventEmitter<Permission>()
+
+  selectAllPermissions: boolean = false;
+
+  ngOnChanges(){
+    this.selectAllPermissions = this.checkedAll();
+  }
 
   selectPermission(permission: Permission){
     this.onSelectPermission.emit(permission);
@@ -40,6 +44,7 @@ export class PermissionsListComponent {
   }
 
   checkedAll(){
-    return this.permissions.every((x) => x.checked)
+    //If Empty return false 
+    return this.permissions.length == 0 ? false : this.permissions.every((x) => x.checked)
   }
 }

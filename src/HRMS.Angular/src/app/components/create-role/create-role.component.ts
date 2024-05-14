@@ -14,17 +14,11 @@ import { PermissionsListComponent } from '../permissions-list/permissions-list.c
 export class CreateRoleComponent {
   constructor(private formBuilder: FormBuilder) {}
 
-  createRoleRequest: CreateRole = {
-    name: "",
-    permissionIds: []
-  };
-
   @Input() showForm: boolean = true;
   @Input() permissions: PermissionInput[] = []
   @Input() createRoleForm: FormGroup = new FormGroup({});
   @Output() onCreateRole = new EventEmitter<CreateRole>()
   @Output() onToggleForm = new EventEmitter()
-  @Output() getPermissions = new EventEmitter()
   @Output() onSelectPermission = new EventEmitter<Permission>()
   @Output() onSelectAllPermissions = new EventEmitter()
   @Output() onDeselectAllPermissions = new EventEmitter()
@@ -34,24 +28,36 @@ export class CreateRoleComponent {
   //   permissionIds: new FormControl<number[]>(this.createRoleRequest.permissionIds??[], [Validators.required])
   // });
 
-  ngOnInit(){    
+  ngOnInit(){ 
   }
 
   createRole() {
-    this.createRoleRequest = this.createRoleForm.value as CreateRole;
-    this.onCreateRole.emit(this.createRoleRequest);
+    const createRoleRequest = this.createRoleForm.value as CreateRole;
+    this.onCreateRole.emit(createRoleRequest);
   }
 
   selectPermission(permission: Permission){    
-    this.onSelectPermission.emit(permission);
+    this.permissions.forEach(element => {
+      if (permission.id == element.id){
+          element.checked = !element.checked;
+      }
+    });
+
+    this.createRoleForm.patchValue({permissionIds: this.permissions.filter(x => x.checked).map(y =>y.id)})
   }
 
-  selectAllPermissions(){        
-    this.onSelectAllPermissions.emit();
+  selectAllPermissions(){           
+    this.permissions.forEach(permission => {   
+      permission.checked = true;
+    });
+    this.createRoleForm.patchValue({permissionIds: this.permissions.filter(x => x.checked).map(y =>y.id)})        
   }
 
   deselectAllPermissions(){
-    this.onDeselectAllPermissions.emit();
+    this.permissions.forEach(permission => {   
+      permission.checked = false;
+    });
+    this.createRoleForm.patchValue({permissionIds: []})
   }
 
   toggleForm(){

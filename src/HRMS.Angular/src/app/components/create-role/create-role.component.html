@@ -13,13 +13,15 @@
                             <div *ngIf="nameError" class="text-red-400">Rolename is required</div>
                         </div>
                     </label>
-                    <label class="input input-bordered flex items-center gap-2">
-                        Permissions
-                        <input id="permissionIds" formControlName="permissionIds" type="text" class="grow" placeholder="Permissions" />
-                        <div class="error" *ngIf="createRoleForm.controls['permissionIds'].errors as permissionError">
-                            <div *ngIf="permissionError" class="text-red-400">Permissions are required</div>
-                        </div>
-                    </label>
+                    <fieldset disabled>
+                        <label class="input input-bordered flex items-center gap-2">
+                            Permissions
+                            <input id="permissionIds" formControlName="permissionIds" type="text" class="grow" placeholder="Permissions" />
+                            <div class="error" *ngIf="createRoleForm.controls['permissionIds'].errors as permissionError">
+                                <div *ngIf="permissionError" class="text-red-400">Permissions are required</div>
+                            </div>
+                        </label>
+                    </fieldset>                    
                 <button [disabled]="!createRoleForm.valid" class="btn join-item rounded-r-full">Create</button>
                 </form>
             </div>
@@ -33,12 +35,12 @@
                 >
                 </app-permissions-list>
             </div>
-        </div>
-        <div class="modal-action">
-        <form method="dialog">
-            <button (click)="toggleForm()" class="btn">Close</button>
-        </form>
-        </div>
+            <div class="modal-action">
+                <form method="dialog">
+                    <button (click)="toggleForm()" class="btn">Close</button>
+                </form>
+                </div>
+        </div>        
     </div>
 </dialog>
 </div>

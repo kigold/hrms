@@ -24,16 +24,18 @@ namespace Auth.API.Apis
                 //.RequireAuthorization(new AuthorizationOptions { AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme });
             rolePermissionGroup.MapGet("/User", GetUsers).RequireAuthorization(Permission.USER_READ.ToString());
             rolePermissionGroup.MapGet("/", GetRoles).RequireAuthorization(Permission.ROLE_READ.ToString());
-            rolePermissionGroup.MapGet("/Permissions", GetAllPermissions).RequireAuthorization(Permission.ROLE_READ.ToString());
-            rolePermissionGroup.MapGet($"/User/Roles/{{userId}}", GetUserRoles).RequireAuthorization(Permission.ROLE_READ.ToString()); ;
-            rolePermissionGroup.MapGet($"/Permissions/{{roleName}}", GetRolePermissions).RequireAuthorization(Permission.ROLE_READ.ToString()); ;
+            rolePermissionGroup.MapGet($"/Permissions/{{roleName}}", GetRolePermissions).RequireAuthorization(Permission.ROLE_READ.ToString());
+            rolePermissionGroup.MapGet("/Permissions/All", GetAllPermissions).RequireAuthorization(Permission.ROLE_READ.ToString());
+            rolePermissionGroup.MapGet($"/User/Roles/{{userId}}", GetUserRoles).RequireAuthorization(Permission.ROLE_READ.ToString());
             rolePermissionGroup.MapPost($"/", CreateRole).RequireAuthorization(Permission.ROLE_CREATE.ToString());
             rolePermissionGroup.MapPost($"/CloneRoles", CloneRoles).RequireAuthorization(Permission.ROLE_CREATE.ToString());
-            rolePermissionGroup.MapPost($"/AddPermissionsToRole", AddPermissionsToRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
-            rolePermissionGroup.MapPost($"/RemovePermissionsFromRole", RemovePermissionsFromRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
-            rolePermissionGroup.MapPost($"/AddUserToRoles", AddUserToRoles).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
-            rolePermissionGroup.MapPost($"/RemoveUserFromRole", RemoveUserFromRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
-            rolePermissionGroup.MapPost($"/AddPermissionsToUser", AddPermissionsToUser).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
+            rolePermissionGroup.MapPut($"/Permissions", UpdateRolePermission).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
+            rolePermissionGroup.MapPut($"/Permissions/Add", AddPermissionsToRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
+            rolePermissionGroup.MapPut($"/Permissions/Remove", RemovePermissionsFromRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
+            rolePermissionGroup.MapPut($"/User/Add", AddUserToRoles).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
+            rolePermissionGroup.MapPut($"/User/Remove", RemoveUserFromRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
+            rolePermissionGroup.MapPut($"/User/Permissions/Add", AddPermissionsToUser).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
+            rolePermissionGroup.MapPut($"/User/Permissions/Remove", RemovePermissionsFromUser).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
             rolePermissionGroup.MapDelete($"/{{roleName}}", DeleteRole).RequireAuthorization(Permission.ROLE_DELETE.ToString()); ;
 
             return app;
@@ -59,7 +61,17 @@ namespace Auth.API.Apis
             return TypedResults.Ok(result.Data);
         }
 
-        //GET /Permissions - GetAllPermissions
+        //GET /Permissions/{roleName} - GetRolePermissions
+        public static async Task<Results<Ok<PermissionResponse[]>, ValidationProblem>> GetRolePermissions(IRoleService roleService, string roleName)
+        {
+            var result = await roleService.GetRolePermissions(roleName);
+            if (result.HasError)
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
+
+            return TypedResults.Ok(result.Data.ToArray());
+        }
+
+        //GET /Permissions/All - GetAllPermissions
         public static async Task<Results<Ok<PermissionResponse[]>, ValidationProblem>> GetAllPermissions(IRoleService roleService)
         {
             var result = await roleService.GetAllPermissions();
@@ -73,16 +85,6 @@ namespace Auth.API.Apis
         public static async Task<Results<Ok<string[]>, ValidationProblem>> GetUserRoles(IRoleService roleService, long userId)
         {
             var result = await roleService.GetUserRoles(userId);
-            if (result.HasError)
-                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
-
-            return TypedResults.Ok(result.Data.ToArray());
-        }
-
-        //GET /Permissions{roleName} - GetRolePermissions
-        public static async Task<Results<Ok<PermissionResponse[]>, ValidationProblem>> GetRolePermissions(IRoleService roleService, string roleName)
-        {
-            var result = await roleService.GetRolePermissions(roleName);
             if (result.HasError)
                 return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
 
@@ -109,7 +111,18 @@ namespace Auth.API.Apis
             return TypedResults.Ok(result.Data);
         }
 
-        //POST /AddPermissionsToRole
+        //PUT /Permissions
+        public static async Task<Results<NoContent, ValidationProblem>> UpdateRolePermission(IRoleService roleService, [FromBody] UpdateRolePermissionsRequest request)
+        {
+            var result = await roleService.UpdateRolePermission(request);
+            if (result.HasError)
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
+
+            return TypedResults.NoContent();
+        }
+
+
+        //PUT /Permissions/Add
         public static async Task<Results<NoContent, ValidationProblem>> AddPermissionsToRole(IRoleService roleService, [FromBody] PermissionsRequest request)
         {
             var result = await roleService.AddPermissionsToRole(request);
@@ -119,7 +132,7 @@ namespace Auth.API.Apis
             return TypedResults.NoContent();
         }
 
-        //POST /RemovePermissionsFromRole
+        //PUT /Permissions/Remove
         public static async Task<Results<NoContent, ValidationProblem>> RemovePermissionsFromRole(IRoleService roleService, [FromBody] PermissionsRequest request)
         {
             var result = await roleService.RemovePermissionsFromRole(request);
@@ -129,7 +142,7 @@ namespace Auth.API.Apis
             return TypedResults.NoContent();
         }
 
-        //POST /AddUserToRoles
+        //PUT /User/Add
         public static async Task<Results<NoContent, ValidationProblem>> AddUserToRoles(IRoleService roleService, [FromBody] UpdateUserRolesRequest request)
         {
             var result = await roleService.AddUserToRoles(request);
@@ -139,7 +152,7 @@ namespace Auth.API.Apis
             return TypedResults.NoContent();
         }
 
-        //POST /RemoveUserFromRole
+        //PUT /User/Remove
         public static async Task<Results<NoContent, ValidationProblem>> RemoveUserFromRole(IRoleService roleService, [FromBody] UpdateUserRolesRequest request)
         {
             var result = await roleService.RemoveUserFromRole(request);
@@ -149,10 +162,20 @@ namespace Auth.API.Apis
             return TypedResults.NoContent();
         }
 
-        //POST /AddPermissionsToUser
+        //PUT /User/Permissions/Add
         public static async Task<Results<NoContent, ValidationProblem>> AddPermissionsToUser(IRoleService roleService, [FromBody] AddUserPermissionsRequest request)
         {
             var result = await roleService.AddPermissionsToUser(request);
+            if (result.HasError)
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
+
+            return TypedResults.NoContent();
+        }
+
+        //PUT /User/Permissions/Remove
+        public static async Task<Results<NoContent, ValidationProblem>> RemovePermissionsFromUser(IRoleService roleService, [FromBody] AddUserPermissionsRequest request)
+        {
+            var result = await roleService.RemovePermissionsFromUser(request);
             if (result.HasError)
                 return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
 

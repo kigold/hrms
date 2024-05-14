@@ -5,7 +5,6 @@ using Auth.API.Models.Response;
 using Auth.API.Models.Responses;
 using Microsoft.AspNetCore.Identity;
 using Shared.Extensions;
-using Shared.Messaging;
 using Shared.Pagination;
 using Shared.Permissions;
 using Shared.Repositories;
@@ -25,11 +24,13 @@ namespace Auth.API.Services
 
         Task<ResultModel<RoleResponse>> CreateRole(CreateRoleRequest request);
         Task<ResultModel<RoleResponse>> CloneRole(CloneRoleRequest request);
+        Task<ResultModel> UpdateRolePermission(UpdateRolePermissionsRequest request);
         Task<ResultModel> AddPermissionsToRole(PermissionsRequest request);
         Task<ResultModel> RemovePermissionsFromRole(PermissionsRequest request);
         Task<ResultModel> AddUserToRoles(UpdateUserRolesRequest request);
         Task<ResultModel> RemoveUserFromRole(UpdateUserRolesRequest request);
         Task<ResultModel> AddPermissionsToUser(AddUserPermissionsRequest request);
+        Task<ResultModel> RemovePermissionsFromUser(AddUserPermissionsRequest request);
         Task<ResultModel<bool>> DeleteRole(string roleName);
     }
 
@@ -49,87 +50,7 @@ namespace Auth.API.Services
             _roleManager = roleManager;
             _userRepo = userRepo;
             _unitOfWork = unitOfWork;
-        }
-        private async Task<ResultModel> AddPermissionToRole(Role role, List<int> permissionIds)
-        {
-            var permissions = permissionIds.Where(x => Enum.IsDefined(typeof(Permission), x)).Select(x => (Permission)x);
-            var errorMessages = new List<string>();
-
-            foreach (var permission in permissions)
-            {
-                var addRoleResult = await _roleManager.AddClaimAsync(role, new Claim(nameof(Permission), permission.ToString()));
-                if (!addRoleResult.Succeeded)
-                {
-                    errorMessages.Add($"Failed to add permission {permission.GetDescription()}: {addRoleResult.Errors.FirstOrDefault()?.Description}" ?? "Failed to add Permission");
-                }
-            }
-
-            return errorMessages.Any() ? new ResultModel(errorMessages) : new ResultModel();
-        }
-
-        public async Task<ResultModel> AddPermissionsToRole(PermissionsRequest request)
-        {
-            var role = await _roleManager.FindByNameAsync(request.RoleName);
-            if (role == null)
-                return new ResultModel<RoleResponse>("Role not found");
-
-            var existingPermissions = (await _roleManager.GetClaimsAsync(role))
-                                .Where(x => Enum.IsDefined(typeof(Permission), x.Value))
-                                    .Select(x => (int)Enum.Parse<Permission>(x.Value));
-
-            var addPermissionResult = await AddPermissionToRole(role, request.PermissionIds.Except(existingPermissions).ToList());
-            if (addPermissionResult.HasError)
-                return new ResultModel(addPermissionResult.ErrorMessages);
-
-            return new ResultModel();
-        }
-
-        public async Task<ResultModel> AddPermissionsToUser(AddUserPermissionsRequest request)
-        {
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-            if (user == null)
-                return new ResultModel("User not found");
-
-            var permissions = request.PermissionIds.Where(x => Enum.IsDefined(typeof(Permission), x)).Select(x => (Permission)x);
-            var errorMessages = new List<string>();
-            foreach (var permission in permissions)
-            {
-                var result = await _userManager.AddClaimAsync(user, new Claim(nameof(Permission), permission.ToString()));
-                if (!result.Succeeded)
-                {
-                    errorMessages.Add($"Failed to add permission {permission.GetDescription()}: {result.Errors.FirstOrDefault()?.Description}" ?? "Failed to add Permission");
-                }
-            }
-            if (!permissions.Any())
-                return new ResultModel("Invalid Permissions");
-
-            return errorMessages.Any() ? new ResultModel(errorMessages) : new ResultModel();
-        }
-
-        public async Task<ResultModel> AddUserToRoles(UpdateUserRolesRequest request)
-        {
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-            if (user == null)
-                return new ResultModel("User not found");
-
-            //Remove existing role if any
-            var userRoles = await _userManager.GetRolesAsync(user);
-            _ = await _userManager.RemoveFromRolesAsync(user, userRoles);
-
-            IdentityResult? addRoleResult = null;
-            try
-            {
-                addRoleResult = await _userManager.AddToRolesAsync(user, [request.RoleName]);
-            }
-            catch(Exception ex)
-            {
-                //Log
-            }
-            if (addRoleResult == null || !addRoleResult.Succeeded)
-                return new ResultModel($"failed to add role, {string.Join("; ", addRoleResult?.Errors?.Select(x => x.Description) ?? [])}");
-
-            return new ResultModel();
-        }
+        }       
 
         public async Task<ResultModel<RoleResponse>> CreateRole(CreateRoleRequest request)
         {
@@ -225,8 +146,163 @@ namespace Auth.API.Services
             return new ResultModel<bool>(true, "Deleted role successfully");
         }
 
+        public async Task<ResultModel> UpdateRolePermission(UpdateRolePermissionsRequest request)
+        {
+            var role = await _roleManager.FindByNameAsync(request.RoleName);
+            if (role == null)
+                return new ResultModel<RoleResponse>("Role not found");
+
+            var permissionTask = new[] { AddPermissionToRole(role, request.AddPermissionIds), RemovePermissionFromRole(role, request.RemovePermissionIds) };
+            var result = await Task.WhenAll(permissionTask);
+
+            var errorMessages = result.Where(x => x.HasError).ToList();
+            if (errorMessages.Any())
+                return new ResultModel(errorMessages.SelectMany(x => x.ErrorMessages).ToList());
+
+            return new ResultModel();
+        }
+
+        private async Task<ResultModel> AddPermissionToRole(Role role, List<int> permissionIds)
+        {
+            var permissions = permissionIds.Where(x => Enum.IsDefined(typeof(Permission), x)).Select(x => (Permission)x);
+            var errorMessages = new List<string>();
+
+            foreach (var permission in permissions)
+            {
+                var addRoleResult = await _roleManager.AddClaimAsync(role, new Claim(nameof(Permission), permission.ToString()));
+                if (!addRoleResult.Succeeded)
+                {
+                    errorMessages.Add($"Failed to add permission {permission.GetDescription()}: {addRoleResult.Errors.FirstOrDefault()?.Description}" ?? "Failed to add Permission");
+                }
+            }
+
+            return errorMessages.Any() ? new ResultModel(errorMessages) : new ResultModel();
+        }
+
+        public async Task<ResultModel> AddPermissionsToRole(PermissionsRequest request)
+        {
+            var role = await _roleManager.FindByNameAsync(request.RoleName);
+            if (role == null)
+                return new ResultModel<RoleResponse>("Role not found");
+
+            var existingPermissions = (await _roleManager.GetClaimsAsync(role))
+                                .Where(x => Enum.IsDefined(typeof(Permission), x.Value))
+                                    .Select(x => (int)Enum.Parse<Permission>(x.Value));
+
+            var addPermissionResult = await AddPermissionToRole(role, request.PermissionIds.Except(existingPermissions).ToList());
+            if (addPermissionResult.HasError)
+                return new ResultModel(addPermissionResult.ErrorMessages);
+
+            return new ResultModel();
+        }
+
+        private async Task<ResultModel> RemovePermissionFromRole(Role role, List<int> permissionIds)
+        {
+            var permissions = permissionIds.Where(x => Enum.IsDefined(typeof(Permission), x)).Select(x => (Permission)x);
+            var errorMessages = new List<string>();
+
+            foreach (var permission in permissions)
+            {
+                var removePermissionResult = await _roleManager.RemoveClaimAsync(role, new Claim(nameof(Permission), permission.ToString()));
+                if (!removePermissionResult.Succeeded)
+                {
+                    return new ResultModel(removePermissionResult.Errors.FirstOrDefault()?.Description??"");
+                }
+            }
+
+            return errorMessages.Any() ? new ResultModel(errorMessages) : new ResultModel();
+        }
+
+        public async Task<ResultModel> RemovePermissionsFromRole(PermissionsRequest request)
+        {
+            var role = await _roleManager.FindByNameAsync(request.RoleName);
+            if (role == null)
+                return new ResultModel("Role not found");
+
+            return await RemovePermissionFromRole(role, request.PermissionIds);
+        }
+
+        public async Task<ResultModel> AddPermissionsToUser(AddUserPermissionsRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return new ResultModel("User not found");
+
+            var permissions = request.PermissionIds.Where(x => Enum.IsDefined(typeof(Permission), x)).Select(x => (Permission)x);
+            if (!permissions.Any())
+                return new ResultModel("Invalid Permissions");
+
+            var errorMessages = new List<string>();
+            var result = await _userManager.AddClaimsAsync(user, permissions.Select(x => new Claim(nameof(Permission), x.ToString())));
+            if (!result.Succeeded)
+            {
+                errorMessages.AddRange(result.Errors.Select(x => $"Failed to Add permissions: {x?.Description}" ?? "Failed to Add Permission"));
+            }
+
+            return errorMessages.Any() ? new ResultModel(errorMessages) : new ResultModel();
+        }
+
+        public async Task<ResultModel> RemovePermissionsFromUser(AddUserPermissionsRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return new ResultModel("User not found");
+
+            var permissions = request.PermissionIds.Where(x => Enum.IsDefined(typeof(Permission), x)).Select(x => (Permission)x);
+            if (!permissions.Any())
+                return new ResultModel("Invalid Permissions");
+
+            var errorMessages = new List<string>();
+            var result = await _userManager.RemoveClaimsAsync(user, permissions.Select(x => new Claim(nameof(Permission), x.ToString())));
+            if (!result.Succeeded)
+            {
+                errorMessages.AddRange(result.Errors.Select(x => $"Failed to Remove permissions: {x?.Description}" ?? "Failed to remove Permission"));
+            }
+
+            return errorMessages.Any() ? new ResultModel(errorMessages) : new ResultModel();
+        }
+
+        public async Task<ResultModel> AddUserToRoles(UpdateUserRolesRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return new ResultModel("User not found");
+
+            //Remove existing role if any
+            var userRoles = await _userManager.GetRolesAsync(user);
+            _ = await _userManager.RemoveFromRolesAsync(user, userRoles);
+
+            IdentityResult? addRoleResult = null;
+            try
+            {
+                addRoleResult = await _userManager.AddToRolesAsync(user, [request.RoleName]);
+            }
+            catch (Exception ex)
+            {
+                //Log
+            }
+            if (addRoleResult == null || !addRoleResult.Succeeded)
+                return new ResultModel($"failed to add role, {string.Join("; ", addRoleResult?.Errors?.Select(x => x.Description) ?? [])}");
+
+            return new ResultModel();
+        }        
+
+        public async Task<ResultModel> RemoveUserFromRole(UpdateUserRolesRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return new ResultModel("User not found");
+
+            var roleResult = await _userManager.RemoveFromRoleAsync(user, request.RoleName);
+            if (!roleResult.Succeeded)
+                return new ResultModel($"failed to remove role {request.RoleName} to user {user.FullName}. {roleResult.Errors.FirstOrDefault()?.Description}");
+
+            return new ResultModel();
+        }
+
         public async Task<ResultModel<IEnumerable<PermissionResponse>>> GetAllPermissions()
         {
+            await Task.Delay(TimeSpan.FromSeconds(3));
             var permissions = (Enum.GetValues(typeof(Permission)) as Permission[])
                     .Select(x => new PermissionResponse((int)x, x.ToString(), x.GetDescription()));
 
@@ -285,40 +361,7 @@ namespace Auth.API.Services
             var roles = await _userManager.GetRolesAsync(user);
 
             return new ResultModel<IEnumerable<string>>(roles);
-        }
-
-        public async Task<ResultModel> RemovePermissionsFromRole(PermissionsRequest request)
-        {
-            var role = await _roleManager.FindByNameAsync(request.RoleName);
-            if (role == null)
-                return new ResultModel("Role not found");
-
-            var permissions = request.PermissionIds.Select(x => (Permission)x);
-
-            foreach (var permission in permissions)
-            {
-                var removePermissionResult = await _roleManager.RemoveClaimAsync(role, new Claim(nameof(Permission), permission.ToString()));
-                if (!removePermissionResult.Succeeded)
-                {
-                    return new ResultModel(removePermissionResult.Errors.FirstOrDefault()?.Description);
-                }
-            }
-
-            return new ResultModel();
-        }
-
-        public async Task<ResultModel> RemoveUserFromRole(UpdateUserRolesRequest request)
-        {
-            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-            if (user == null)
-                return new ResultModel("User not found");
-
-            var roleResult = await _userManager.RemoveFromRoleAsync(user, request.RoleName);
-            if (!roleResult.Succeeded)
-                return new ResultModel($"failed to remove role {request.RoleName} to user {user.FullName}. {roleResult.Errors.FirstOrDefault()?.Description}");
-
-            return new ResultModel();
-        }
+        }        
     }
 
     public static class MapperExtensions

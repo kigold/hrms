@@ -8,6 +8,7 @@ namespace Auth.API.Models.Request
         public CreateRoleRequestValidator()
         {
             RuleFor(role => role.Name).NotEmpty().Must(x => !x.Contains('|')).WithMessage("Role name contains invalid character |");
+            RuleFor(role => role.PermissionIds).NotNull();
         }
     }
 
@@ -21,6 +22,7 @@ namespace Auth.API.Models.Request
         }
     }
 
+    public record UpdateRolePermissionsRequest(string RoleName, List<int> AddPermissionIds, List<int> RemovePermissionIds);
     public record PermissionsRequest(string RoleName, List<int> PermissionIds);
     public record UpdateUserRolesRequest(long UserId, string RoleName);
     public record AddUserPermissionsRequest(long UserId, List<int> PermissionIds);

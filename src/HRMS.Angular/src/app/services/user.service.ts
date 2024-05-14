@@ -4,7 +4,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HelperService } from './helper.service';
 import { PagedList, PageRequest, SearchPageRequest } from '../models/util';
 import { User } from '../models/user';
-import { CloneRole, CreateRole, Permission, Role } from '../models/role';
+import { CloneRole, CreateRole, EditRole, Permission, Role } from '../models/role';
 
 @Injectable({
   providedIn: 'root'
@@ -45,7 +45,7 @@ export class UserService implements BaseService{
         },
 		  };
 
-		return this.httpClient.get<Permission[]>(this.SERVER_URL + "/role/permissions", requestOptions);
+		return this.httpClient.get<Permission[]>(this.SERVER_URL + "/role/permissions/all", requestOptions);
 	}
   
   getUserRoles(userId: number){
@@ -58,7 +58,7 @@ export class UserService implements BaseService{
 		return this.httpClient.get<string[]>(this.SERVER_URL + `/role/user/roles/${userId}`, requestOptions);
 	}
 
-  getRolesPermissions(role: string){
+  getRolePermissions(role: string){
 		const requestOptions = {
         headers: {
           'Content-Type': 'application/json',
@@ -76,6 +76,16 @@ export class UserService implements BaseService{
 		  };
 
 		return this.httpClient.post(this.SERVER_URL + '/role', payload, requestOptions);
+	}
+
+  updateRolePermissions(payload: EditRole){
+		const requestOptions = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+		  };
+
+		return this.httpClient.put(this.SERVER_URL + '/role/permissions', payload, requestOptions);
 	}
 
   cloneRoles(payload: CloneRole){
