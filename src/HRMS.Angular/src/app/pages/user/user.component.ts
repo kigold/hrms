@@ -24,7 +24,7 @@ export class UserComponent {
     hasNextPage: false,
     hasPrevPage: false
   }
-  headers: string[] = ['Id', 'Firstname', 'Lastname', 'Email' ]
+  headers: string[] = ['Id', 'Firstname', 'Lastname', 'Email', 'Actions' ]
 
   constructor(private userService: UserService, private helperService: HelperService
   ){}
@@ -47,6 +47,17 @@ export class UserComponent {
         }
         this.loading = false;
         this.helperService.toastInfo(`Page ${this.pageData.page} of Users Loaded`);
+      },
+      error: (e) => this.userService.handleError(e)
+    })
+  }
+
+  lockuser(userId: number){
+    this.loading = true;
+    this.userService.lockoutUser({userId: userId, lockout: true})
+    .subscribe({
+      next: () => {
+        this.loading = false;
       },
       error: (e) => this.userService.handleError(e)
     })

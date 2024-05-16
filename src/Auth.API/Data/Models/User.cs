@@ -10,6 +10,8 @@ namespace Auth.API.Data.Models
         public string? Avatar { get; set; }
         [NotMapped]
         public string FullName => $"{Firstname} {Lastname}";
+        [NotMapped]
+        public bool IsActive => LockoutEnd == null;
     }
 
     public class Role : IdentityRole<long>
@@ -19,4 +21,10 @@ namespace Auth.API.Data.Models
     public class RoleClaim : IdentityRoleClaim<long> { }
     public class UserClaim : IdentityUserClaim<long> { }
     public class UserRole : IdentityUserRole<long> { }
+
+    public class ClaimDTO
+    {
+        public string ClaimValue { get; set; } = string.Empty;
+        public string ClaimType { get; set; } = string.Empty;
+    }
 }

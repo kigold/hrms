@@ -4,6 +4,7 @@ using Auth.API.Models.Requests;
 using Auth.API.Models.Response;
 using Auth.API.Models.Responses;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
 using Shared.Extensions;
 using Shared.Pagination;
 using Shared.Permissions;
@@ -11,12 +12,15 @@ using Shared.Repositories;
 using Shared.ViewModels;
 using System.Data;
 using System.Security.Claims;
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace Auth.API.Services
 {
     public interface IRoleService
     {
         Task<ResultModel<PagedList<UserResponse>>> GetUsers(GetUsersRequest query);
+        Task<ResultModel<List<PermissionResponse>>> GetUserPermissions(long userId);
+        Task<ResultModel<List<PermissionResponse>>> GetUserPermissions2(long userId);
         Task<ResultModel<PagedList<RoleResponse>>> GetRoles(PagedRequest query);
         Task<ResultModel<IEnumerable<PermissionResponse>>> GetAllPermissions();
         Task<ResultModel<IEnumerable<string>>> GetUserRoles(long userId);
@@ -31,6 +35,7 @@ namespace Auth.API.Services
         Task<ResultModel> RemoveUserFromRole(UpdateUserRolesRequest request);
         Task<ResultModel> AddPermissionsToUser(AddUserPermissionsRequest request);
         Task<ResultModel> RemovePermissionsFromUser(AddUserPermissionsRequest request);
+        Task<ResultModel> LockoutUser(UpdateUserStatusRequest request);
         Task<ResultModel<bool>> DeleteRole(string roleName);
     }
 
@@ -50,7 +55,18 @@ namespace Auth.API.Services
             _roleManager = roleManager;
             _userRepo = userRepo;
             _unitOfWork = unitOfWork;
-        }       
+        }
+
+        public async Task<ResultModel> LockoutUser(UpdateUserStatusRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(request.UserId.ToString());
+            if (user == null)
+                return new ResultModel("User not found");
+
+            await _userManager.SetLockoutEndDateAsync(user, request.Lockout ? DateTime.MaxValue : null); //Lock or unlock
+
+            return new ResultModel();
+        }
 
         public async Task<ResultModel<RoleResponse>> CreateRole(CreateRoleRequest request)
         {
@@ -341,6 +357,50 @@ namespace Auth.API.Services
             return new ResultModel<PagedList<UserResponse>>(new PagedList<UserResponse>(result.Items.Select(x => x.ToUserResponse()), result.TotalCount, query.PageNumber, query.PageSize));
         }
 
+        public async Task<ResultModel<List<PermissionResponse>>> GetUserPermissions(long userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            var claims = await _userManager.GetClaimsAsync(user);
+            var roles = await _userManager.GetRolesAsync(user);
+            var userPermissions = new HashSet<Permission>();
+            foreach(var role in roles)
+            {
+                var permissions = await QueryRolePermissions(role);
+                foreach(var permission in permissions)
+                {
+                    userPermissions.Add(permission);
+                }
+            }
+            foreach(var claim in claims.Where(x => x.Type == nameof(Permission)))
+            {
+                userPermissions.Add(Enum.Parse<Permission>(claim.Value));
+            }
+
+            return new ResultModel<List<PermissionResponse>>(
+                userPermissions.Select(x => new PermissionResponse((int)x, x.ToString(), x.GetDescription())).ToList());
+        }
+
+        public async Task<ResultModel<List<PermissionResponse>>> GetUserPermissions2(long userId)
+        {
+            var user = new SqlParameter("userId",userId);
+            var result = _userRepo.ToSql<ClaimDTO>($@"(SELECT rc.ClaimType, rc.ClaimValue 
+                             FROM UserRole ur
+	                       LEFT JOIN RoleClaims rc on rc.RoleId = ur.RoleId
+		                   WHERE ur.UserId = {userId} AND rc.ClaimType = 'PERMISSION'
+                         )
+		                   UNION
+                         (SELECT uc.ClaimType, uc.ClaimValue 
+                            FROM UserClaims uc
+	                          WHERE uc.UserId = 1)");
+
+            return new ResultModel<List<PermissionResponse>>(
+                result.Select(x =>
+                {
+                    var p = Enum.Parse<Permission>(x.ClaimValue);
+                    return new PermissionResponse((int)p, p.ToString(), p.GetDescription());
+                }).ToList());
+        }
+
         public async Task<ResultModel<PagedList<RoleResponse>>> GetRoles(PagedRequest query)
         {
             var totalRoles = _roleManager.Roles.Count();
@@ -373,7 +433,8 @@ namespace Auth.API.Services
                 source.Firstname,
                 source.Lastname,
                 source.Email??"",
-                source.Avatar??""
+                source.Avatar??"",
+                source.IsActive
                 );
         }
     }

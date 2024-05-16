@@ -25,5 +25,6 @@ namespace Auth.API.Models.Request
     public record UpdateRolePermissionsRequest(string RoleName, List<int> AddPermissionIds, List<int> RemovePermissionIds);
     public record PermissionsRequest(string RoleName, List<int> PermissionIds);
     public record UpdateUserRolesRequest(long UserId, string RoleName);
+    public record UpdateUserStatusRequest(long UserId, bool Lockout);
     public record AddUserPermissionsRequest(long UserId, List<int> PermissionIds);
 }

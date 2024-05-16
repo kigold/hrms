@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.Data.SqlClient;
+using System.Linq.Expressions;
 
 namespace Shared.Repositories
 {
@@ -16,5 +17,6 @@ namespace Shared.Repositories
         void Delete(TEntity entityToDelete);
         void Update(TEntity entityToUpdate);
         Task SaveChangesAsync();
+        List<T> ToSql<T>(FormattableString query);
     }
 }

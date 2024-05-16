@@ -3,7 +3,7 @@ import { BaseService } from './base.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HelperService } from './helper.service';
 import { PagedList, PageRequest, SearchPageRequest } from '../models/util';
-import { User } from '../models/user';
+import { UpdateUserStatus, User } from '../models/user';
 import { CloneRole, CreateRole, EditRole, Permission, Role } from '../models/role';
 
 @Injectable({
@@ -76,6 +76,16 @@ export class UserService implements BaseService{
 		  };
 
 		return this.httpClient.post(this.SERVER_URL + '/role', payload, requestOptions);
+	}
+
+  lockoutUser(payload: UpdateUserStatus){
+		const requestOptions = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+		  };
+
+		return this.httpClient.put(this.SERVER_URL + '/role/user/lock', payload, requestOptions);
 	}
 
   updateRolePermissions(payload: EditRole){

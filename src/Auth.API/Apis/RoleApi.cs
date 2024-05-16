@@ -26,16 +26,19 @@ namespace Auth.API.Apis
             rolePermissionGroup.MapGet("/", GetRoles).RequireAuthorization(Permission.ROLE_READ.ToString());
             rolePermissionGroup.MapGet($"/Permissions/{{roleName}}", GetRolePermissions).RequireAuthorization(Permission.ROLE_READ.ToString());
             rolePermissionGroup.MapGet("/Permissions/All", GetAllPermissions).RequireAuthorization(Permission.ROLE_READ.ToString());
-            rolePermissionGroup.MapGet($"/User/Roles/{{userId}}", GetUserRoles).RequireAuthorization(Permission.ROLE_READ.ToString());
+            rolePermissionGroup.MapGet($"/User/Roles/{{userId}}", GetUserRoles).RequireAuthorization(Permission.USER_READ.ToString());
+            rolePermissionGroup.MapGet($"/User/Permissions/{{userId}}", GetUserPermissions).RequireAuthorization(Permission.USER_READ.ToString());
+            rolePermissionGroup.MapGet($"/User/Permissions2/{{userId}}", GetUserPermissions2).RequireAuthorization(Permission.USER_READ.ToString());
             rolePermissionGroup.MapPost($"/", CreateRole).RequireAuthorization(Permission.ROLE_CREATE.ToString());
             rolePermissionGroup.MapPost($"/CloneRoles", CloneRoles).RequireAuthorization(Permission.ROLE_CREATE.ToString());
             rolePermissionGroup.MapPut($"/Permissions", UpdateRolePermission).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
             rolePermissionGroup.MapPut($"/Permissions/Add", AddPermissionsToRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
             rolePermissionGroup.MapPut($"/Permissions/Remove", RemovePermissionsFromRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
-            rolePermissionGroup.MapPut($"/User/Add", AddUserToRoles).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
-            rolePermissionGroup.MapPut($"/User/Remove", RemoveUserFromRole).RequireAuthorization(Permission.ROLE_UPDATE.ToString()); ;
-            rolePermissionGroup.MapPut($"/User/Permissions/Add", AddPermissionsToUser).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
-            rolePermissionGroup.MapPut($"/User/Permissions/Remove", RemovePermissionsFromUser).RequireAuthorization(Permission.ROLE_UPDATE.ToString());
+            rolePermissionGroup.MapPut($"/User/Add", AddUserToRoles).RequireAuthorization(Permission.USER_UPDATE.ToString()); ;
+            rolePermissionGroup.MapPut($"/User/Remove", RemoveUserFromRole).RequireAuthorization(Permission.USER_UPDATE.ToString()); ;
+            rolePermissionGroup.MapPut($"/User/Permissions/Add", AddPermissionsToUser).RequireAuthorization(Permission.USER_UPDATE.ToString());
+            rolePermissionGroup.MapPut($"/User/Permissions/Remove", RemovePermissionsFromUser).RequireAuthorization(Permission.USER_UPDATE.ToString());
+            rolePermissionGroup.MapPut($"/User/lock", LockoutUser).RequireAuthorization(Permission.USER_UPDATE.ToString());
             rolePermissionGroup.MapDelete($"/{{roleName}}", DeleteRole).RequireAuthorization(Permission.ROLE_DELETE.ToString()); ;
 
             return app;
@@ -89,6 +92,26 @@ namespace Auth.API.Apis
                 return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
 
             return TypedResults.Ok(result.Data.ToArray());
+        }
+
+        //GET /User/Permissions/{userId} - GetUserPermissions
+        public static async Task<Results<Ok<List<PermissionResponse>>, ValidationProblem>> GetUserPermissions(IRoleService roleService, long userId)
+        {
+            var result = await roleService.GetUserPermissions(userId);
+            if (result.HasError)
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
+
+            return TypedResults.Ok(result.Data);
+        }
+
+        //GET /User/Permissions2/{userId} - GetUserPermissions2
+        public static async Task<Results<Ok<List<PermissionResponse>>, ValidationProblem>> GetUserPermissions2(IRoleService roleService, long userId)
+        {
+            var result = await roleService.GetUserPermissions2(userId);
+            if (result.HasError)
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
+
+            return TypedResults.Ok(result.Data);
         }
 
         //POST /
@@ -156,6 +179,16 @@ namespace Auth.API.Apis
         public static async Task<Results<NoContent, ValidationProblem>> RemoveUserFromRole(IRoleService roleService, [FromBody] UpdateUserRolesRequest request)
         {
             var result = await roleService.RemoveUserFromRole(request);
+            if (result.HasError)
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
+
+            return TypedResults.NoContent();
+        }
+
+        //PUT /User/Lock
+        public static async Task<Results<NoContent, ValidationProblem>> LockoutUser(IRoleService roleService, [FromBody] UpdateUserStatusRequest request)
+        {
+            var result = await roleService.LockoutUser(request);
             if (result.HasError)
                 return TypedResults.ValidationProblem(new Dictionary<string, string[]>() { { "Error", result.ErrorMessages.ToArray() } });
 

@@ -1,6 +1,7 @@
 ﻿using Auth.API.Data.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace Auth.API.Data.Context
 {
@@ -18,7 +19,7 @@ namespace Auth.API.Data.Context
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRole { get; set; }
-        public DbSet<UserClaim> UserClaims { get; set; }
+        public DbSet<IdentityUserClaim<long>> UserClaims { get; set; }
         public DbSet<IdentityRoleClaim<long>> RoleClaims { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
