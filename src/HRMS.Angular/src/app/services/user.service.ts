@@ -3,8 +3,7 @@ import { BaseService } from './base.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HelperService } from './helper.service';
 import { PagedList, PageRequest, SearchPageRequest } from '../models/util';
-import { UpdateUserStatus, User } from '../models/user';
-import { CloneRole, CreateRole, EditRole, Permission, Role } from '../models/role';
+import { UpdateUserStatus, User, UserDetails } from '../models/user';
 
 @Injectable({
   providedIn: 'root'
@@ -24,28 +23,17 @@ export class UserService implements BaseService{
 		  };
 
       const searchQuery = payload.query === undefined || null || "" ? "" : `&query=${payload.query}`
-    console.log(">>>>>>> USer Service Get Users", payload)
-		return this.httpClient.get<PagedList<User[]>>(this.SERVER_URL + `/role/user?pageSize=${payload.pageSize}&pageNumber=${payload.page}${searchQuery}`, requestOptions);
+		return this.httpClient.get<PagedList<User[]>>(this.SERVER_URL + `/user?pageSize=${payload.pageSize}&pageNumber=${payload.page}${searchQuery}`, requestOptions);
 	}
 
-  getRoles(payload: PageRequest){
+  getUserDetails(userId: number){
 		const requestOptions = {
         headers: {
           'Content-Type': 'application/json',
         },
 		  };
 
-		return this.httpClient.get<PagedList<Role[]>>(this.SERVER_URL + `/role?pageSize=${payload.pageSize}&pageNumber=${payload.page}`, requestOptions);
-	}
-
-  getAllPermissions(){
-		const requestOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-		  };
-
-		return this.httpClient.get<Permission[]>(this.SERVER_URL + "/role/permissions/all", requestOptions);
+		return this.httpClient.get<UserDetails>(this.SERVER_URL + `/user/${userId}`, requestOptions);
 	}
   
   getUserRoles(userId: number){
@@ -55,67 +43,17 @@ export class UserService implements BaseService{
         },
 		  };
 
-		return this.httpClient.get<string[]>(this.SERVER_URL + `/role/user/roles/${userId}`, requestOptions);
+		return this.httpClient.get<string[]>(this.SERVER_URL + `/user/roles/${userId}`, requestOptions);
 	}
 
-  getRolePermissions(role: string){
+  updateUserStatus(payload: UpdateUserStatus){
 		const requestOptions = {
         headers: {
           'Content-Type': 'application/json',
         },
 		  };
 
-		return this.httpClient.get<Permission[]>(this.SERVER_URL + `/role/permissions/${role}`, requestOptions);
-	}
-
-  createRoles(payload: CreateRole){
-		const requestOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-		  };
-
-		return this.httpClient.post(this.SERVER_URL + '/role', payload, requestOptions);
-	}
-
-  lockoutUser(payload: UpdateUserStatus){
-		const requestOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-		  };
-
-		return this.httpClient.put(this.SERVER_URL + '/role/user/lock', payload, requestOptions);
-	}
-
-  updateRolePermissions(payload: EditRole){
-		const requestOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-		  };
-
-		return this.httpClient.put(this.SERVER_URL + '/role/permissions', payload, requestOptions);
-	}
-
-  cloneRoles(payload: CloneRole){
-		const requestOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-		  };
-
-		return this.httpClient.post(this.SERVER_URL + '/role/cloneroles', payload, requestOptions);
-	}
-
-  deleteRole(roleName: string){
-		const requestOptions = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-		  };
-
-		return this.httpClient.delete(this.SERVER_URL + `/role/${roleName}`, requestOptions);
+		return this.httpClient.put(this.SERVER_URL + '/user/status', payload, requestOptions);
 	}
 
   handleError(error: HttpErrorResponse) {

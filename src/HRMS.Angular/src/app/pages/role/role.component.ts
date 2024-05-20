@@ -8,6 +8,7 @@ import { CreateRoleComponent } from '../../components/create-role/create-role.co
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { EditRoleComponent } from '../../components/edit-role/edit-role.component';
 import { Observable, of, mergeMap, lastValueFrom } from 'rxjs';
+import { RoleService } from '../../services/role.service';
 
 @Component({
   selector: 'app-role',  
@@ -55,7 +56,7 @@ export class RoleComponent {
 
   headers: string[] = ['Id', 'Name', 'Actions']
 
-  constructor(private userService: UserService, private helperService: HelperService
+  constructor(private roleService: RoleService, private helperService: HelperService
   ){}
   
   ngOnInit(){   
@@ -64,7 +65,7 @@ export class RoleComponent {
   }
 
   getRoles(){
-    this.userService.getRoles(this.pageRequest)
+    this.roleService.getRoles(this.pageRequest)
     .subscribe({
       next: (res) => {
         this.roles = res.items;
@@ -77,7 +78,7 @@ export class RoleComponent {
         this.loading = false;
         this.helperService.toastInfo(`Page ${this.pageData.page} of Roles Loaded`);
       },
-      error: (e) => this.userService.handleError(e)
+      error: (e) => this.roleService.handleError(e)
     })
   }
 
@@ -85,19 +86,19 @@ export class RoleComponent {
     if (this.permissions.length > 0)
       return;
 
-    this.userService.getAllPermissions()
+    this.roleService.getAllPermissions()
     .subscribe({
       next: (res) => {
         this.permissions = res.map((x) => ({...x, checked: false}))
         this.loading = false;        
       },
-      error: (e) => this.userService.handleError(e)
+      error: (e) => this.roleService.handleError(e)
     })
   }
 
   onCreateRole(payload: CreateRole){
     this.loading = true;
-    this.userService.createRoles(payload)
+    this.roleService.createRoles(payload)
     .subscribe({
       next: () => {
         //clear Role Form
@@ -111,7 +112,7 @@ export class RoleComponent {
       },
       error: (e) => {
         this.loading = false;
-        this.userService.handleError(e);
+        this.roleService.handleError(e);
       }
     })
     return false;
@@ -119,7 +120,7 @@ export class RoleComponent {
 
   deleteRole(roleName: string){
     this.loading = true;
-    this.userService.deleteRole(roleName)
+    this.roleService.deleteRole(roleName)
     .subscribe({
       next: () => {
         this.loading = false;        
@@ -127,7 +128,7 @@ export class RoleComponent {
       },
       error: (e) => {
         this.loading = false;
-        this.userService.handleError(e);
+        this.roleService.handleError(e);
       }
     })
   }
@@ -135,7 +136,7 @@ export class RoleComponent {
   onEditRole(payload: EditRole){
     console.log("Edit Payload", payload)
     this.loading = true;
-    this.userService.updateRolePermissions(payload)
+    this.roleService.updateRolePermissions(payload)
     .subscribe({
       next: () => {
         //clear Role Form
@@ -151,7 +152,7 @@ export class RoleComponent {
       },
       error: (e) => {
         this.loading = false;
-        this.userService.handleError(e);
+        this.roleService.handleError(e);
       }
     })
     return false;
@@ -175,11 +176,11 @@ export class RoleComponent {
       permissionIds: []
     })
 
-    this.userService.getAllPermissions()
+    this.roleService.getAllPermissions()
     .subscribe({
       next: (res) => {
         var permissions = res.map((x) => ({...x, checked: false}))      
-        this.userService.getRolePermissions(roleName)
+        this.roleService.getRolePermissions(roleName)
         .subscribe({
           next: (rolePermissions) => {
             this.initialPermissions = rolePermissions.map(x => x.id)
@@ -199,11 +200,11 @@ export class RoleComponent {
           },
           error: (e) => {
             this.loading = false;
-            this.userService.handleError(e);
+            this.roleService.handleError(e);
           }
         })
       },
-      error: (e) => this.userService.handleError(e)
+      error: (e) => this.roleService.handleError(e)
     })  
   }
 

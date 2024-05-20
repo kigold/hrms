@@ -92,6 +92,7 @@ namespace Auth.API
             app.MapDefaultControllerRoute();
             app.MapWeatherRequestEndpoints();
             app.MapRoleEndpoints();
+            app.MapUserEndpoints();
             return app;
         }
 

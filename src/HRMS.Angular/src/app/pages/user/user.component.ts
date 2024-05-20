@@ -1,76 +1,41 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { PageData, PageRequest, SearchPageRequest } from '../../models/util';
-import { User } from '../../models/user';
-import { HelperService } from '../../services/helper.service';
+import { Component, Input } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
+import { HelperService } from '../../services/helper.service';
+import { UserDetails } from '../../models/user';
 
 @Component({
   selector: 'app-user',
-  standalone: true,
-  imports: [ CommonModule],
   templateUrl: './user.component.html',
   styleUrl: './user.component.css'
 })
-export class UserComponent {
-
-  users: User[] = [];
-  pageRequest: SearchPageRequest = { page: 1, pageSize: 10 }  
+export class UserComponent {  
   loading: boolean = false;
-  showCreateEmployee: boolean = false;
-  pageData: PageData = {
-    page: 0,
-    totalPage: 0,
-    hasNextPage: false,
-    hasPrevPage: false
-  }
-  headers: string[] = ['Id', 'Firstname', 'Lastname', 'Email', 'Actions' ]
+  userId: number = 0;
+  user: UserDetails = <UserDetails>{};
+  tab: string = 'details'
 
-  constructor(private userService: UserService, private helperService: HelperService
-  ){}
+  constructor(
+    private route: ActivatedRoute,
+    private userService: UserService,
+    private helperService: HelperService  ) {}
   
-  ngOnInit(){ 
-    this.loading = true;
-    this.getUsers();   
+  ngOnInit() {
+    this.userId = parseInt(this.route.snapshot.paramMap.get('id')??"0");
+    console.log("Loading User Details")
+    this.getUserDetails();
   }
 
-  getUsers(){
-    this.userService.getUsers(this.pageRequest)
+  getUserDetails(){    
+    this.loading = true;
+    this.userService.getUserDetails(this.userId)
     .subscribe({
       next: (res) => {
-        this.users = res.items;
-        this.pageData = {
-          page: res.currentPage,
-          totalPage: res.totalPages,
-          hasNextPage: res.totalPages > res.currentPage,
-          hasPrevPage: (res.currentPage - 1) > 0
-        }
+        this.user = res;
         this.loading = false;
-        this.helperService.toastInfo(`Page ${this.pageData.page} of Users Loaded`);
+        console.log(res)
       },
       error: (e) => this.userService.handleError(e)
     })
-  }
-
-  lockuser(userId: number){
-    this.loading = true;
-    this.userService.lockoutUser({userId: userId, lockout: true})
-    .subscribe({
-      next: () => {
-        this.loading = false;
-      },
-      error: (e) => this.userService.handleError(e)
-    })
-  }
-
-  onNextPage(){
-    this.pageRequest.page += 1;
-    console.log(">>>>>>> USer Search Query", this.pageRequest)
-    this.getUsers();
-  }
-
-  onPrevPage(){
-    this.pageRequest.page -= 1;
-    this.getUsers();
   }
 }

@@ -19,6 +19,7 @@ namespace Auth.API.Services
     public interface IRoleService
     {
         Task<ResultModel<PagedList<UserResponse>>> GetUsers(GetUsersRequest query);
+        Task<ResultModel<UserDetailResponse>> GetUserDetails(long userId);
         Task<ResultModel<List<PermissionResponse>>> GetUserPermissions(long userId);
         Task<ResultModel<List<PermissionResponse>>> GetUserPermissions2(long userId);
         Task<ResultModel<PagedList<RoleResponse>>> GetRoles(PagedRequest query);
@@ -35,7 +36,7 @@ namespace Auth.API.Services
         Task<ResultModel> RemoveUserFromRole(UpdateUserRolesRequest request);
         Task<ResultModel> AddPermissionsToUser(AddUserPermissionsRequest request);
         Task<ResultModel> RemovePermissionsFromUser(AddUserPermissionsRequest request);
-        Task<ResultModel> LockoutUser(UpdateUserStatusRequest request);
+        Task<ResultModel> UpdateUserStatus(UpdateUserStatusRequest request);
         Task<ResultModel<bool>> DeleteRole(string roleName);
     }
 
@@ -57,7 +58,7 @@ namespace Auth.API.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<ResultModel> LockoutUser(UpdateUserStatusRequest request)
+        public async Task<ResultModel> UpdateUserStatus(UpdateUserStatusRequest request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString());
             if (user == null)
@@ -318,7 +319,6 @@ namespace Auth.API.Services
 
         public async Task<ResultModel<IEnumerable<PermissionResponse>>> GetAllPermissions()
         {
-            await Task.Delay(TimeSpan.FromSeconds(3));
             var permissions = (Enum.GetValues(typeof(Permission)) as Permission[])
                     .Select(x => new PermissionResponse((int)x, x.ToString(), x.GetDescription()));
 
@@ -357,6 +357,18 @@ namespace Auth.API.Services
             return new ResultModel<PagedList<UserResponse>>(new PagedList<UserResponse>(result.Items.Select(x => x.ToUserResponse()), result.TotalCount, query.PageNumber, query.PageSize));
         }
 
+        public async Task<ResultModel<UserDetailResponse>> GetUserDetails(long userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return new ResultModel<UserDetailResponse>("User not found");
+
+            var userPermissions = GetUserPermissionsImplementation(userId);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return new ResultModel<UserDetailResponse>(new UserDetailResponse(user.ToUserResponse(), roles.Select(x => new RoleResponse(0, x)).ToArray(), userPermissions.ToArray()));
+        }
+
         public async Task<ResultModel<List<PermissionResponse>>> GetUserPermissions(long userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -382,7 +394,14 @@ namespace Auth.API.Services
 
         public async Task<ResultModel<List<PermissionResponse>>> GetUserPermissions2(long userId)
         {
-            var user = new SqlParameter("userId",userId);
+            var result = GetUserPermissionsImplementation(userId);
+
+            return new ResultModel<List<PermissionResponse>>(result.ToList());
+        }
+
+        private IEnumerable<PermissionResponse> GetUserPermissionsImplementation(long userId)
+        {
+            var user = new SqlParameter("userId", userId);
             var result = _userRepo.ToSql<ClaimDTO>($@"(SELECT rc.ClaimType, rc.ClaimValue 
                              FROM UserRole ur
 	                       LEFT JOIN RoleClaims rc on rc.RoleId = ur.RoleId
@@ -393,12 +412,11 @@ namespace Auth.API.Services
                             FROM UserClaims uc
 	                          WHERE uc.UserId = 1)");
 
-            return new ResultModel<List<PermissionResponse>>(
-                result.Select(x =>
-                {
-                    var p = Enum.Parse<Permission>(x.ClaimValue);
-                    return new PermissionResponse((int)p, p.ToString(), p.GetDescription());
-                }).ToList());
+            return result.Select(x =>
+            {
+                var p = Enum.Parse<Permission>(x.ClaimValue);
+                return new PermissionResponse((int)p, p.ToString(), p.GetDescription());
+            });
         }
 
         public async Task<ResultModel<PagedList<RoleResponse>>> GetRoles(PagedRequest query)

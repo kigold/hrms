@@ -10,7 +10,7 @@ import { Menu } from './models/menu';
 })
 export class AppComponent {
   menu: Menu[] = [
-    {id: 1, isActive: true, name: "User", link:'/user' },
+    {id: 1, isActive: true, name: "Users", link:'/user' },
     {id: 2, isActive: true, name: "Role", link:'/role' },  
     {id: 3, isActive: true, name: "Employee", link:'/employee' }, 
     {id: 4, isActive: true, name: "Leave Management" , link:'/leave'}, 

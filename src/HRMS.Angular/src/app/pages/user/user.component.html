@@ -1,36 +1,40 @@
-<div class="flex flex-row gap-4">
-    <input type="text" placeholder="Type here" class="input input-bordered w-full max-w-xs" />
-    <button class="btn btn-outline">Search</button>
-</div>
-<div class="overflow-x-auto flex flex-col mx-10">
-    <table class="table table-zebra table-md">
-      <thead>
-        <tr>
-          <th *ngFor="let header of headers"> {{header}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let user of users">            
-          <td>{{user.id}}</td>
-          <td>{{user.firstName}}</td>
-          <td>{{user.lastName}}</td>
-          <td>{{user.email}}</td>
-          <td>
-            <div class="flex flex-row gap-5">
-                <button (click)="true" class="btn btn-circle btn-xs">
-                    <svg class="h-8 w-8 text-gray-400"  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">  <path stroke="none" d="M0 0h24v24H0z"/>  <path d="M9 7 h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />  <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />  <line x1="16" y1="5" x2="19" y2="8" /></svg>
-                </button>
-                <button [disabled]="!user.isActive" (click)="lockuser(user.id)" class="btn btn-circle btn-xs">
-                  <svg class="h-8 w-8 text-red-400"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round">  <circle cx="12" cy="12" r="10" />  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></svg>
-                </button>
+<div role="tablist" class="tabs tabs-boxed">
+    <input type="radio" checked name="user-details" role="tab" class="tab" aria-label="Details" />
+    <div role="tabpanel" class="tab-content">
+        <label class="input flex items-center gap-2">
+            Id
+            <input type="text" class="grow" value="{{user.user.id}}" disabled/>
+          </label>
+        <label class="input flex items-center gap-2">
+            First Name
+            <input type="text" class="grow" value="{{user.user.firstName}}" disabled/>
+          </label>
+          <label class="input flex items-center gap-2">
+            last Name
+            <input type="text" class="grow" value="{{user.user.lastName}}" disabled/>
+          </label>        
+          <label class="input flex items-center gap-2">
+            Email
+            <input type="text" class="grow" value="{{user.user.email}}" disabled/>
+          </label>
+    </div>
+    <input type="radio" name="user-details" role="tab" class="tab" aria-label="Roles" />
+    <div role="tabpanel" class="tab-content">
+        <div *ngFor="let role of user.roles" class="card w-96 bg-base-100 shadow-xl">
+            <div class="card-body">
+                <p>{{role.id}}</p>
+              <h2 class="card-title">{{role.name}}</h2>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <div class="join flex flex-row justify-center pt-2">
-        <button (click)="onPrevPage()" [disabled]="!pageData.hasPrevPage" class="join-item btn bg-primary">«</button>
-        <button class="join-item btn">Page {{pageData.page}} of {{pageData.totalPage}} Pages</button>
-        <button (click)="onNextPage()" [disabled]="!pageData.hasNextPage" class="join-item btn bg-primary">»</button>
-      </div>
+          </div>
+    </div>
+    <input type="radio" name="user-details" role="tab" class="tab" aria-label="Permissions" />
+    <div role="tabpanel" class="tab-content">
+        <div *ngFor="let permissions of user.permissions" class="card card-compact card-bordered h-25 bg-base-100 shadow-xl">
+            <div class="card-body">
+                <p>{{permissions.id}}</p>
+              <h2 class="card-title">{{permissions.name}}</h2>
+              <p>{{permissions.description}}</p>
+            </div>
+          </div>
+    </div>
   </div>
