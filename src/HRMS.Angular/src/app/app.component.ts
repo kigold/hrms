@@ -55,7 +55,6 @@ export class AppComponent {
     this.authService.login(request)
     .subscribe({
       next: (res) => {
-        console.log(">>>>>> logging in ", res)
         let user = this.authService.storeAuthInLocalStorage(res);
         this.profile = {
           id: user.id,

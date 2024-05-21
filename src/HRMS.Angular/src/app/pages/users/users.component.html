@@ -1,6 +1,6 @@
 <div class="flex flex-row gap-4">
-    <input type="text" placeholder="Type here" class="input input-bordered w-full max-w-xs" />
-    <button class="btn btn-outline">Search</button>
+    <input value="search" [(ngModel)]="pageRequest.query"  type="text" placeholder="Search for User by Name or Email" class="input input-bordered w-full max-w-xs" />
+    <button (click)="getUsers()" class="btn btn-outline">Search</button>
 </div>
 <div class="overflow-x-auto flex flex-col mx-10">
     <table class="table table-zebra table-md">

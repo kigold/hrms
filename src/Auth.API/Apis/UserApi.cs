@@ -26,8 +26,8 @@ namespace Auth.API.Apis
             userGroup.MapGet($"/Roles/{{userId}}", GetUserRoles).RequireAuthorization(Permission.USER_READ.ToString());
             userGroup.MapGet($"/Permissions/{{userId}}", GetUserPermissions).RequireAuthorization(Permission.USER_READ.ToString());
             userGroup.MapGet($"/Permissions2/{{userId}}", GetUserPermissions2).RequireAuthorization(Permission.USER_READ.ToString());
-            userGroup.MapPut($"/Add", AddUserToRoles).RequireAuthorization(Permission.USER_UPDATE.ToString()); ;
-            userGroup.MapPut($"/Remove", RemoveUserFromRole).RequireAuthorization(Permission.USER_UPDATE.ToString()); ;
+            userGroup.MapPut($"/Role/Add", AddUserToRoles).RequireAuthorization(Permission.USER_UPDATE.ToString()); ;
+            userGroup.MapPut($"/Role/Remove", RemoveUserFromRole).RequireAuthorization(Permission.USER_UPDATE.ToString()); ;
             userGroup.MapPut($"/Permissions/Add", AddPermissionsToUser).RequireAuthorization(Permission.USER_UPDATE.ToString());
             userGroup.MapPut($"/Permissions/Remove", RemovePermissionsFromUser).RequireAuthorization(Permission.USER_UPDATE.ToString());
             userGroup.MapPut($"/Status", UpdateUserStatus).RequireAuthorization(Permission.USER_UPDATE.ToString());
@@ -85,7 +85,7 @@ namespace Auth.API.Apis
             return TypedResults.Ok(result.Data);
         }
 
-        //PUT /Add
+        //PUT /Role/Add
         public static async Task<Results<NoContent, ValidationProblem>> AddUserToRoles(IRoleService roleService, [FromBody] UpdateUserRolesRequest request)
         {
             var result = await roleService.AddUserToRoles(request);
@@ -95,7 +95,7 @@ namespace Auth.API.Apis
             return TypedResults.NoContent();
         }
 
-        //PUT /Remove
+        //PUT /Role/Remove
         public static async Task<Results<NoContent, ValidationProblem>> RemoveUserFromRole(IRoleService roleService, [FromBody] UpdateUserRolesRequest request)
         {
             var result = await roleService.RemoveUserFromRole(request);

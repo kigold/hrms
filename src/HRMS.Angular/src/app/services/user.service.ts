@@ -3,7 +3,7 @@ import { BaseService } from './base.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HelperService } from './helper.service';
 import { PagedList, PageRequest, SearchPageRequest } from '../models/util';
-import { UpdateUserStatus, User, UserDetails } from '../models/user';
+import { UpdateUserRole, UpdateUserStatus, User, UserDetails } from '../models/user';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +55,17 @@ export class UserService implements BaseService{
 
 		return this.httpClient.put(this.SERVER_URL + '/user/status', payload, requestOptions);
 	}
+
+  updateUseRole(payload: UpdateUserRole){
+		const requestOptions = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+		  };
+
+		return this.httpClient.put(this.SERVER_URL + '/user/role/add', payload, requestOptions);
+	}
+
 
   handleError(error: HttpErrorResponse) {
     this.helperService.handleError(error);

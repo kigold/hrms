@@ -410,7 +410,7 @@ namespace Auth.API.Services
 		                   UNION
                          (SELECT uc.ClaimType, uc.ClaimValue 
                             FROM UserClaims uc
-	                          WHERE uc.UserId = 1)");
+	                          WHERE uc.UserId = {userId})");
 
             return result.Select(x =>
             {

@@ -1,22 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { PageData, PageRequest, SearchPageRequest } from '../../models/util';
 import { User } from '../../models/user';
 import { HelperService } from '../../services/helper.service';
 import { UserService } from '../../services/user.service';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [ CommonModule, RouterLink],
+  imports: [ CommonModule, RouterLink, FormsModule],
   templateUrl: './users.component.html',
   styleUrl: './users.component.css'
 })
 export class UsersComponent {
 
   users: User[] = [];
-  pageRequest: SearchPageRequest = { page: 1, pageSize: 10 }  
+  pageRequest: SearchPageRequest = { page: 1, pageSize: 10, query: '' }  
   loading: boolean = false;
   showCreateEmployee: boolean = false;
   pageData: PageData = {
@@ -35,6 +36,7 @@ export class UsersComponent {
   }
 
   getUsers(){
+    console.log(this.pageRequest)
     this.loading = true;
     this.userService.getUsers(this.pageRequest)
     .subscribe({

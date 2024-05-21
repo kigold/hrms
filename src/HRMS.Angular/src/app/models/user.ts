@@ -19,3 +19,8 @@ export interface UserDetails{
     roles: Role[],
     permissions: Permission[]
 }
+
+export interface UpdateUserRole{
+    userId: number,
+    roleName: string
+}
