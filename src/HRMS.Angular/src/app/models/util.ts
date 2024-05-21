@@ -11,14 +11,13 @@ export interface PageRequest{
     pageSize: number,
 }
 
+export interface SearchPageRequest extends PageRequest{
+    query?: string
+}
+
 export interface PageData{
     page: number,
     totalPage: number,
     hasNextPage: boolean,
     hasPrevPage: boolean
-}
-
-export interface ToastType{
-    message: string;
-    type: string; //Info, Error
 }

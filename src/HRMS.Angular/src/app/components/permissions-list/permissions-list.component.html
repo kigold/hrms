@@ -1,0 +1,41 @@
+<div class="overflow-x-auto">
+    <table class="table">
+      <!-- head -->
+      <thead>
+        <tr>
+          <th>
+            <label>
+              <input type="checkbox" [checked]="checkedAll()" class="checkbox" (click)="toggleSelectAllPermissions()" />
+            </label>
+          </th>
+          <th>Permission</th>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let permission of permissions">
+          <th>
+            <label>
+              <input [id]="permission.id" [checked]="permission.checked" (click)="selectPermission(permission)" type="checkbox" class="checkbox permission-check-box" />
+            </label>
+          </th>
+          <td>{{permission.id}}</td>
+          <td>
+            <span class="badge badge-ghost badge-lg">{{permission.name}}</span>
+          </td>
+          <td>{{permission.description}}</td>
+        </tr>        
+      </tbody>
+      <!-- foot -->
+      <tfoot>
+        <tr>
+          <th></th>
+          <th>Permission</th>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </tfoot>
+      
+    </table>
+  </div>

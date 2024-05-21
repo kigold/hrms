@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Shared.Repositories
@@ -83,6 +84,11 @@ namespace Shared.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public List<T> ToSql<T>(FormattableString query)
+        {
+            return _context.Database.SqlQuery<T>(query).ToList();
         }
     }
 }

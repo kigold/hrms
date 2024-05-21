@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { AuthService } from './services/auth.service';
-import { LoginRequest, User } from './models/auth';
+import { LoginRequest, AuthUser } from './models/auth';
 import { Menu } from './models/menu';
 
 @Component({
@@ -9,8 +9,14 @@ import { Menu } from './models/menu';
   styleUrl: './app.component.css',
 })
 export class AppComponent {
-  menu: Menu[] = [{id: 1, isActive: false, name: "Employee", link:'/employee' }, {id: 2, isActive: true, name: "Leave Management" , link:'/leave'}, {id: 3, isActive: false, name: "Setting" , link:'/'}];
-  profile: User = <User>{};
+  menu: Menu[] = [
+    {id: 1, isActive: true, name: "Users", link:'/user' },
+    {id: 2, isActive: true, name: "Role", link:'/role' },  
+    {id: 3, isActive: true, name: "Employee", link:'/employee' }, 
+    {id: 4, isActive: true, name: "Leave Management" , link:'/leave'}, 
+    {id: 5, isActive: true, name: "Setting" , link:'/'}
+  ];
+  profile: AuthUser = <AuthUser>{};
   showLogin: boolean = false;
   title = 'HRMS';
   loading: boolean = false;
@@ -49,7 +55,6 @@ export class AppComponent {
     this.authService.login(request)
     .subscribe({
       next: (res) => {
-        console.log(">>>>>> logging in ", res)
         let user = this.authService.storeAuthInLocalStorage(res);
         this.profile = {
           id: user.id,

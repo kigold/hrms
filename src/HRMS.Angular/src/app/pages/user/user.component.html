@@ -1,0 +1,102 @@
+<div *ngIf="loading" class="flex justify-center">
+    <span class="loading loading-bars loading-lg"></span>
+</div>
+<div role="tablist" class="tabs tabs-boxed">
+    <input type="radio" checked name="user-details" role="tab" class="tab" aria-label="Details" />
+    <div role="tabpanel" class="tab-content" *ngIf="user.user">
+        <label class="input flex items-center gap-2">
+            Id
+            <input type="text" class="grow" value="{{user.user.id}}" disabled/>
+          </label>
+        <label class="input flex items-center gap-2">
+            First Name
+            <input type="text" class="grow" value="{{user.user.firstName}}" disabled/>
+          </label>
+          <label class="input flex items-center gap-2">
+            last Name
+            <input type="text" class="grow" value="{{user.user.lastName}}" disabled/>
+          </label>        
+          <label class="input flex items-center gap-2">
+            Email
+            <input type="text" class="grow" value="{{user.user.email}}" disabled/>
+          </label>
+    </div>
+    <input type="radio" name="user-details" role="tab" class="tab" aria-label="Roles" />
+    <div role="tabpanel" class="tab-content">
+        <button (click)="toggleAddUserRoleForm()" class="btn btn-xs btn-accent m-4">Add User Role</button>
+        <div *ngFor="let role of user.roles" class="card w-96 bg-base-100 shadow-xl">
+            <div class="card-body">
+              <h2 class="card-title">{{role.name}}</h2>
+            </div>
+          </div>
+    </div>
+    <input type="radio" name="user-details" role="tab" class="tab" aria-label="Permissions" />
+    <div role="tabpanel" class="tab-content">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra table-xs">
+              <thead>
+                <tr>
+                  <th>Id</th>
+                  <th>Name</th>
+                  <th>Descriptions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let permission of user.permissions">
+                  <th>{{permission.id}}</th>
+                  <td>{{permission.name}}</td>
+                  <td>{{permission.description}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+    </div>
+  </div>
+
+  <!-- Add User Role Modal Form -->
+  <div>
+    <input type="checkbox" [checked]="showUserRoleForm" id="user_role_modal" class="modal-toggle">
+    <dialog id="user_role_modal" class="modal modal-bottom sm:modal-middle">
+        
+
+        <div class="modal-box w-11/12 max-w-5xl">
+            <div class="flex flex-col w-full lg:flex-row">
+                <div class="flow">
+                    <h3 class="font-bold text-lg">Add User Role</h3>
+                    {{selectedRole}}
+                    <Form (ngSubmit)="AddUserToRole()" [formGroup]="addUserRoleForm" class="join join-vertical flex flex-col justify-center gap-4 px-2 pt-2">
+                        <input class="input input-bordered join-item" id="roleName" formControlName="roleName" placeholder="Role Name"/>
+                        <button [disabled]="!addUserRoleForm.valid" class="btn btn-sm join-item rounded-r-full" >Add Role</button>
+                      </Form>
+                </div>
+                <div class="divider lg:divider-horizontal">|</div> 
+                <div class="grid flex-grow h-32 card rounded-box place-items-center">
+                <div class="flex gap-5">
+                    <div>
+                        <!-- Table of Roles -->
+                        <div class="form-control" *ngFor="let role of roles">
+                            <label class="label cursor-pointer">
+                            <span class="label-text">{{role.name}}</span> 
+                            <input [id]="role.id" (click)="selectRole(role.name)" type="radio" name="role.name" class="radio checked:bg-red-500"/>
+                            </label>
+                        </div>
+                        <div class="flex pb-5">
+                            <div class="join flex flex-row justify-center pt-2">
+                                <button [disabled]="loading" (click)="onPrevPage()" [disabled]="!pageData.hasPrevPage" class="join-item btn btn-xs bg-primary">«</button>
+                                <button class="join-item btn btn-xs">Page {{pageData.page}} of {{pageData.totalPage}} Pages</button>
+                                <button [disabled]="loading" (click)="onNextPage()" [disabled]="!pageData.hasNextPage" class="join-item btn btn-xs bg-primary">»</button>
+                              </div>
+                        </div>
+                    </div>
+                    <div class="modal-action pl-5 mt-0">
+                        <form method="dialog">
+                        <!-- if there is a button in form, it will close the modal -->
+                        <button (click)="toggleAddUserRoleForm()" class="btn btn-xs bg-primary">Close</button>
+                        </form>
+                    </div>
+                </div>
+                </div>
+            </div>        
+        </div>
+    </dialog>
+  </div>

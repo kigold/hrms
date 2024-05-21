@@ -11,11 +11,15 @@ import { LoginComponent } from './components/login/login.component';
 import { CreateEmployeeComponent } from './employee/create-employee/create-employee.component';
 import { headerInterceptor } from './interceptor/header.interceptor';
 import { ToastComponent } from './components/toast/toast.component';
+import { UsersComponent } from './pages/users/users.component';
+import { RoleComponent } from './pages/role/role.component';
+import { UserComponent } from './pages/user/user.component';
 
 
 @NgModule({
   declarations: [
     AppComponent,
+    UserComponent,
   ],
   imports: [
     AppRoutingModule,
@@ -24,7 +28,9 @@ import { ToastComponent } from './components/toast/toast.component';
     ReactiveFormsModule,
     HttpClientModule,
     ToastComponent,
-    LoginComponent,
+    LoginComponent,    
+    UsersComponent,
+    RoleComponent,
     CreateEmployeeComponent
   ],
   providers: [

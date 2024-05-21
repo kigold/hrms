@@ -53,10 +53,10 @@ export class EmployeeComponent {
   }
 
   onCreateEmployee(request: CreateEmployee){
+    this.loading = true;
     this.employeeService.createEmployee(request)
     .subscribe({
       next: (res) => {
-        this.loading = true;
         this.loading = false;        
         this.showCreateEmployee = false;
         this.helperService.toastSuccess(`Employee successfully Created`);
