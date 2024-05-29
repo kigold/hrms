@@ -7,9 +7,14 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
 using Shared.Data;
+using Shared.FileStorage;
 using Shared.Messaging;
 using Shared.Permissions;
 using Shared.Repositories;
@@ -76,6 +81,16 @@ namespace Employees.API
             });
 
             services.AddHostedService<SeedingWorker>(); //Seed Companies
+
+            return services;
+        }
+
+        public static IServiceCollection AddFileProvider(this IServiceCollection services, WebApplicationBuilder builder)
+        {
+            var fileSetting = builder.Configuration.GetSection(nameof(FileStorageSetting)).Get<FileStorageSetting>()!;
+            services.Configure<FileStorageSetting>(builder.Configuration.GetSection(nameof(FileStorageSetting)));
+            Directory.CreateDirectory(fileSetting.BaseDirectory);
+            services.AddSingleton<IFileProvider>(new PhysicalFileProvider(fileSetting.BaseDirectory));
 
             return services;
         }

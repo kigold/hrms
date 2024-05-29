@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { Employee } from '../../models/employee';
 import { PageData } from '../../models/util';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-employee-table',
   standalone: true,
-  imports: [ CommonModule],
+  imports: [ CommonModule, RouterModule],
   templateUrl: './employee-table.component.html',
   styleUrl: './employee-table.component.css'
 })
@@ -22,8 +23,7 @@ export class EmployeeTableComponent {
   };
   @Output() nextPage = new EventEmitter()
   @Output() prevPage = new EventEmitter()
-    
-
+  loading: boolean = false;   
 
   ngOnInit(){    
   }

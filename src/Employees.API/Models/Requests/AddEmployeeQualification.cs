@@ -10,7 +10,8 @@ namespace Employees.API.Models.Requests
             string Title,
             string Description,
             DateTime? DateReceived,
-            DateTime? ExpiryDate
+            DateTime? ExpiryDate,
+            IFormFile File
         );
 
     public class AddEmployeeQualificationValidator : AbstractValidator<AddEmployeeQualification>

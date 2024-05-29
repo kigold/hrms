@@ -21,3 +21,10 @@ export interface PageData{
     hasNextPage: boolean,
     hasPrevPage: boolean
 }
+
+export interface MediaFile{
+    fileId: string|null,
+    filePath: string|null,
+    fileName: string|null,
+    fileType: string|null,
+}

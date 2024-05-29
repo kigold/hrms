@@ -11,10 +11,12 @@ builder.Logging.AddConsole();
 builder.Services.ConfigureAuth(builder.Configuration);
 builder.Services.AddApplicationDependencies(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddFileProvider(builder);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddCors();
+builder.Services.AddAntiforgery();
 
 var app = builder.Build();
 
@@ -34,8 +36,10 @@ app.UseCors(x =>
     //.AllowCredentials();
 });
 
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
+//app.MapCustomEnpoints();
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())

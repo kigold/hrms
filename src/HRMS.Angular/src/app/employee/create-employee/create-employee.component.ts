@@ -35,8 +35,8 @@ export class CreateEmployeeComponent {
   // });
 
   employeeForm = this.formBuilder.nonNullable.group({
-    firstName: [this.employee.firstName, Validators.required],
-    lastName: ['', Validators.required],
+    firstName: [this.employee.firstName, [Validators.required, Validators.pattern(/^(\s+\S+\s*)*(?!\s).*$/)]],
+    lastName: ['', [Validators.required, Validators.pattern(/^(\s+\S+\s*)*(?!\s).*$/)]],
     email : ['', [Validators.required, Validators.email]],
     phone : '',
     address: '',

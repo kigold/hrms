@@ -40,7 +40,14 @@ export class HelperService {
 			this.toastError(error.message, []);
 		  } 
 		  else if (error.status === 400) {
-			this.toastError(error.message, error.error.errors['Error'])
+			if (error.error.errors && error.error.errors['Error'])
+				this.toastError(error.message, error.error.errors['Error']);
+			else if (error.error && error.error['detail'])
+				{
+					this.toastError(error.message, [error.error['title'], error.error['detail']]);
+				}
+			else
+				this.toastError(error.message, []);
 		  } 
 		  else {
 			// The backend returned an unsuccessful response code.
