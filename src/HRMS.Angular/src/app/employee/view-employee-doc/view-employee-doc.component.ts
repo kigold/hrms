@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { EditEmployee, EmployeeDetail } from '../../models/employee';
 import { CommonModule } from '@angular/common';
 import { MediaFile } from '../../models/util';
+import { HelperService } from '../../services/helper.service';
 
 @Component({
   selector: 'app-view-employee-doc',
@@ -17,7 +18,12 @@ export class ViewEmployeeDocComponent {
   @Input() mediaFile: MediaFile = <MediaFile>{};
   @Output() onClose = new EventEmitter()
 
-constructor() {}
+constructor(private helperService: HelperService) {}
+
+
+  getPath(file: MediaFile){
+    return this.helperService.getFilePath(file)
+  }
 
   closeView(){
     this.onClose.emit();

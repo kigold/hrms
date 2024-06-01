@@ -8,7 +8,7 @@
             <div>{{mediaFile.filePath}}</div>
             <div>{{mediaFile.fileType}}</div>
             <div>{{mediaFile.fileName}}</div>   
-            <img src="{{mediaFile.filePath}}" alt="{{mediaFile.fileName}}">            
+            <img src="{{getPath(mediaFile)}}" alt="{{mediaFile.fileName}}">            
           <div class="modal-action">
             <form method="dialog">
                 <!-- if there is a button in form, it will close the modal -->

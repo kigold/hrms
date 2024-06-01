@@ -61,12 +61,19 @@ namespace Employees.API.Services
             if (!_fileStorageSetting.AllowedExtensions.Contains(ext.Replace(".", "")))
                 return null;
             var fileId = Guid.NewGuid();
-            var fileName = Path.Combine(_fileStorageSetting.BaseDirectory, QUALIFICATION_DIR, $"{fileId.ToString()}{ext}");
-            using (var stream = File.Create(fileName))
+            var fileName = Path.Combine(QUALIFICATION_DIR, $"{fileId.ToString()}{ext}");
+            var filePath = Path.Combine(_fileStorageSetting.BaseDirectory, fileName);
+            using (var stream = File.Create(filePath))
             {
                 await file.CopyToAsync(stream);
             }
             return new MediaFile { Id = fileId, Path = fileName, Mimetype = Path.GetExtension(file.FileName) };
+        }
+
+        private void DeleteFile(MediaFile file)
+        {
+            var filePath = Path.Combine(_fileStorageSetting.BaseDirectory, file.Path);
+            File.Delete(filePath);
         }
 
         public async Task<ResultModel<QualificationResponse>> AddQualification(AddEmployeeQualification request)
@@ -172,8 +179,18 @@ namespace Employees.API.Services
         }
         public async Task<ResultModel> RemoveQualification(long qualificationId)
         {
-            _qualificationRepo.Delete(qualificationId);
+            var qualification = await _qualificationRepo.Get(x => x.Id == qualificationId).Include(x => x.MediaFile).FirstOrDefaultAsync();
+            if (qualification == null)
+                return new ResultModel("Qualification not found");
+
+            _unitOfWork.BeginTransaction();
+            if (qualification.MediaFile != null)
+                DeleteFile(qualification.MediaFile);//TODO Move this to A Message Queue instead of processing it in real time
+
+            _qualificationRepo.Delete(qualification);
             await _unitOfWork.SaveChangesAsync();
+
+            _unitOfWork.Commit();
             return new ResultModel();
         }
 

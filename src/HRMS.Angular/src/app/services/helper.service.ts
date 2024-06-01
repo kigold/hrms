@@ -4,12 +4,14 @@ import { Injectable } from '@angular/core';
 import { throwError } from 'rxjs';
 import { ToastService } from './toast.service';
 import { ToastType } from '../models/toast';
+import { MediaFile } from '../models/util';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HelperService {
 
+	private FILE_SERVER_URL: string = "https://localhost:7178";
   constructor(private toastService: ToastService) { }
   
   toastInfo( title: string){
@@ -31,6 +33,10 @@ export class HelperService {
 		errors: errors,
 		type: type
 	})
+  }
+
+  getFilePath(file: MediaFile){
+	return `${this.FILE_SERVER_URL}/${file.filePath}`
   }
 
   handleError(error: any){
