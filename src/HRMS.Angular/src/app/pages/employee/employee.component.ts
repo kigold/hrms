@@ -116,10 +116,11 @@ export class EmployeeComponent {
 
   previewDocument(id: number){
     this.loading = true;
-    this.showDoc = true;
     const qualification = this.employeeDetail.qualifications.filter(x => x.id == id)[0];
+    //qualification.mediaFile = qualification.mediaFile?.replace("\\", "/") ?? "";
     this.doc = { fileId: qualification.mediaFileId, filePath : qualification.mediaFile, fileName: qualification.title, fileType: "" }
     this.loading = false;
+    this.showDoc = true;
   }
 
   closeDocView(){

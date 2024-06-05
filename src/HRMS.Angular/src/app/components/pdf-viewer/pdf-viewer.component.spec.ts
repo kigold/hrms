@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ViewEmployeeDocComponent } from './view-employee-doc.component';
+import { PdfViewerComponent } from './pdf-viewer.component';
 
-describe('EditEmployeeComponent', () => {
-  let component: ViewEmployeeDocComponent;
-  let fixture: ComponentFixture<ViewEmployeeDocComponent>;
+describe('PdfViewerComponent', () => {
+  let component: PdfViewerComponent;
+  let fixture: ComponentFixture<PdfViewerComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ViewEmployeeDocComponent]
+      imports: [PdfViewerComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(ViewEmployeeDocComponent);
+    fixture = TestBed.createComponent(PdfViewerComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
