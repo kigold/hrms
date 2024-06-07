@@ -9,6 +9,7 @@ builder.Logging.AddConsole();
 // Add services to the container.
 builder.Services.ConfigureAuthentication(builder.Configuration);
 builder.Services.AddApplicationDependencies();
+builder.Services.AddMessageBus();
 builder.Services.AddApplicationServices();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

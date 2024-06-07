@@ -2,6 +2,7 @@
 using MassTransit;
 using Shared.Messaging;
 using System.Text.Json;
+using static Shared.Messaging.PubMessageType;
 
 namespace Employees.API.Messaging
 {
@@ -26,10 +27,10 @@ namespace Employees.API.Messaging
         {
             try
             {
-                _logger.LogInformation(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Received: {message}", context.Message.Message); 
-                if (context.Message.MessageType != PubMessageType.SetStaffId)
+                _logger.LogDebug("Received: {message}", context.Message.Message); 
+                if (context.Message.MessageType != EMPLOYEE_SET_STAFF_ID)
                 {
-                    _logger.LogInformation("No handler for message: {message}", context.Message);
+                    _logger.LogWarning("No handler for message: {message}", context.Message);
                     return;
                 }
                 var message = JsonSerializer.Deserialize<EmployeeStaffIdDTO>(context.Message.Message);
@@ -41,6 +42,7 @@ namespace Employees.API.Messaging
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message, ex);
+                throw;
             }
         }
     }

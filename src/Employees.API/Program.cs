@@ -11,6 +11,7 @@ builder.Logging.AddConsole();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.ConfigureAuth(builder.Configuration);
 builder.Services.AddApplicationDependencies(builder.Configuration);
+builder.Services.AddMessageBus();
 builder.Services.AddApplicationServices();
 builder.Services.AddFileProvider(builder);
 builder.Services.AddEndpointsApiExplorer();

@@ -1,8 +1,4 @@
-﻿using Employees.API.Data.Models;
-using System.Net;
-using System.Numerics;
-
-namespace Employees.API.Models.Responses
+﻿namespace Employees.API.Models.Responses
 {
     public record EmployeeResponse(
             long Id,

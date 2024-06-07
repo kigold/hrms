@@ -13,6 +13,7 @@ using Shared.Pagination;
 using Shared.Repositories;
 using Shared.ViewModels;
 using System.Text.Json;
+using static Shared.Messaging.PubMessageType;
 
 namespace Employees.API.Services
 {
@@ -24,6 +25,7 @@ namespace Employees.API.Services
         public Task<ResultModel> DeleteEmployee(int companyId, long employeeId);
         public Task<ResultModel<QualificationResponse>> AddQualification(AddEmployeeQualification request);
         public Task<ResultModel> RemoveQualification(long qualificationId);
+        public Task DeleteFile(MediaFile mediaFile);
 
         public Task<ResultModel<PagedList<EmployeeResponse>>> GetEmployee(int companyId, PagedRequest query);
         public Task<ResultModel<EmployeeDetailResponse>> GetEmployee(int companyId, long employeeId);
@@ -70,10 +72,11 @@ namespace Employees.API.Services
             return new MediaFile { Id = fileId, Path = fileName, Mimetype = Path.GetExtension(file.FileName) };
         }
 
-        private void DeleteFile(MediaFile file)
+        public Task DeleteFile(MediaFile mediaFile)
         {
-            var filePath = Path.Combine(_fileStorageSetting.BaseDirectory, file.Path);
+            var filePath = Path.Combine(_fileStorageSetting.BaseDirectory, mediaFile.Path);
             File.Delete(filePath);
+            return Task.CompletedTask;
         }
 
         public async Task<ResultModel<QualificationResponse>> AddQualification(AddEmployeeQualification request)
@@ -106,6 +109,8 @@ namespace Employees.API.Services
             };
             _qualificationRepo.Insert(qualification);
             await _unitOfWork.SaveChangesAsync();
+            if (qualification.MediaFile != null)
+                await _bus.Publish(new PublishMessage(JsonSerializer.Serialize(qualification.MediaFile), FILE_PROCESS_SHRINK_FILE));
 
             return new ResultModel<QualificationResponse>(qualification.ToQualificationResponse());
         }
@@ -137,8 +142,7 @@ namespace Employees.API.Services
 
             _employeeRepo.Insert(employee);
             await _unitOfWork.SaveChangesAsync();
-            var message = JsonSerializer.Serialize(employee.ToEmployeeMessage());
-            await _bus.Publish(new PublishMessage(message, PubMessageType.CreateUser));
+            await _bus.Publish(new PublishMessage(JsonSerializer.Serialize(employee.ToEmployeeMessage()), EMPLOYEE_CREATE_USER));
 
             return new ResultModel<EmployeeResponse>(employee.ToEmployeeResponse());
         }
@@ -151,8 +155,7 @@ namespace Employees.API.Services
 
             _employeeRepo.Delete(employeeId);
             await _unitOfWork.SaveChangesAsync();
-            var message = JsonSerializer.Serialize(employee.ToEmployeeMessage());
-            await _bus.Publish(new PublishMessage(message, PubMessageType.DeleteUser));
+            await _bus.Publish(new PublishMessage(JsonSerializer.Serialize(employee.ToEmployeeMessage()), EMPLOYEE_DELETE_USER));
 
             return new ResultModel();
         }
@@ -174,9 +177,10 @@ namespace Employees.API.Services
             if (employee == null)
                 return new ResultModel<EmployeeDetailResponse>("Employee not found");
 
-            var result = employee.ToEmployeeResponse2();
+            var result = employee.ToEmployeeDetailsResponse();
             return new ResultModel<EmployeeDetailResponse>(result);
         }
+
         public async Task<ResultModel> RemoveQualification(long qualificationId)
         {
             var qualification = await _qualificationRepo.Get(x => x.Id == qualificationId).Include(x => x.MediaFile).FirstOrDefaultAsync();
@@ -185,7 +189,7 @@ namespace Employees.API.Services
 
             _unitOfWork.BeginTransaction();
             if (qualification.MediaFile != null)
-                DeleteFile(qualification.MediaFile);//TODO Move this to A Message Queue instead of processing it in real time
+                await _bus.Publish(new PublishMessage(JsonSerializer.Serialize(qualification.MediaFile), FILE_PROCESS_DELETE_FILE));
 
             _qualificationRepo.Delete(qualification);
             await _unitOfWork.SaveChangesAsync();
@@ -213,6 +217,7 @@ namespace Employees.API.Services
             employee.Country = request.Country;
 
             await _unitOfWork.SaveChangesAsync();
+            await _bus.Publish(new PublishMessage(JsonSerializer.Serialize(employee.ToEmployeeMessage()), EMPLOYEE_UPDATE_USER));
 
             return new ResultModel();
         }
@@ -256,7 +261,6 @@ namespace Employees.API.Services
 
         public static EmployeeResponse ToEmployeeResponse(this Employee source)
         {
-            var qualifications = source.Qualifications?.Count > 0 ? source.Qualifications.Select(x => x.ToQualificationResponse()) : new List<QualificationResponse>();
             return new EmployeeResponse(
                     source.Id,
                     source.FirstName,
@@ -269,7 +273,7 @@ namespace Employees.API.Services
                 );
         }
 
-        public static EmployeeDetailResponse ToEmployeeResponse2(this Employee source)
+        public static EmployeeDetailResponse ToEmployeeDetailsResponse(this Employee source)
         {
             return new EmployeeDetailResponse(
                     source.Id,
