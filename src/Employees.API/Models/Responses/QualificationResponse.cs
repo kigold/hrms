@@ -1,11 +1,14 @@
 ﻿namespace Employees.API.Models.Responses
 {
-    public class QualificationResponse(
+    public record QualificationResponse(
+            long Id,
             string Title,
             string Description,
             string QualificationType,
             string EducationLevel,
             DateTime? DateReceived,
-            DateTime? ExpiryDate
+            DateTime? ExpiryDate,
+            string? MediaFile,
+            Guid? MediaFileId
         );
 }

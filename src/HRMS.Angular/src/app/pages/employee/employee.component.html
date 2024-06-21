@@ -1,16 +1,140 @@
 <div *ngIf="loading" class="flex justify-center">
     <span class="loading loading-bars loading-lg"></span>
 </div>
-<app-create-employee
-[showForm]= showCreateEmployee
-(onToggleForm)="onToggleEmployeeForm()"
-(onCreateEmployee)="onCreateEmployee($event)"
-></app-create-employee> 
-
-<app-employee-table
-    [employees] = employees
-    [pageData]="pageData"
-    (nextPage)="onNextPage()"
-    (prevPage)="onPrevPage()"
->
-</app-employee-table>
+<div class="container m-5">
+    <div class="w-11/12 max-w-5xl">
+        <div class="flex flex-col w-full lg:flex-row">
+            <div class="flow">
+                <!-- Employees Details -->
+                <h3 class="font-bold text-lg">Edit Employee</h3>
+                <form (ngSubmit)="editEmployee()" [formGroup]="editEmployeeForm" class="join join-vertical flex flex-col justify-center gap-4 px-2 pt-4">
+                    <label class="input input-bordered flex items-center gap-2">
+                        Firstname
+                        <input id="firstName" formControlName="firstName" type="text" class="grow" placeholder="Firstname" />
+                        <div class="error" *ngIf="editEmployeeForm.controls['firstName'].errors as firstNameError">
+                            <div *ngIf="firstNameError" class="text-red-400">Firstname is required</div>
+                        </div>
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Lastname
+                        <input id="lastName" formControlName="lastName" type="text" class="grow" placeholder="Lastname" />
+                        <div class="error" *ngIf="editEmployeeForm.controls['lastName'].errors as lastNameError">
+                            <div *ngIf="lastNameError" class="text-red-400">Lastname is required</div>
+                        </div>
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Email
+                        <input [value]="editEmployeeForm.controls['email'].value" type="text" class="input grow" placeholder="email@site.com" disabled />
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Phone Number
+                        <input id="address" formControlName="phone" type="text" class="grow" placeholder="Phone" />
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Country
+                    <input id="address" formControlName="country" type="text" class="grow" placeholder="Country" />
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Address
+                    <input id="address" formControlName="address" type="text" class="grow" placeholder="Address" />
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Position
+                    <input id="address" formControlName="position" type="text" class="grow" placeholder="Position" />
+                    </label>
+                    <label class="input input-bordered flex items-center gap-2">
+                        Department
+                    <input id="address" formControlName="department" type="text" class="grow" placeholder="Department" />
+                    </label>                  
+                <button [disabled]="!editEmployeeForm.valid || !editEmployeeForm.dirty" class="btn join-item rounded-r-full">Update</button>
+                </form>
+            </div>
+            <div class="divider lg:divider-horizontal">|</div> 
+            <div class="grid flex-grow card rounded-box place-items-center">
+                <!-- Add Qualifications Form -->
+                <h3 class="font-bold text-lg">Add Qualifications</h3>
+                <form (ngSubmit)="addQualification()" [formGroup]="addQualificationForm" class="pt-4">
+                    <div class="join grid grid-cols-6 gap-5">
+                        <label class="input input-bordered flex items-center gap-2 col-span-3">
+                            Title
+                            <input id="Title" formControlName="title" type="text" class="grow" placeholder="Title" />
+                            <div class="error" *ngIf="editEmployeeForm.controls['firstName'].errors as titleError">
+                                <div *ngIf="titleError" class="text-red-400">Title is required</div>
+                            </div>
+                        </label>
+                        <label class="input input-bordered flex items-center gap-2 col-span-3">
+                            Description
+                            <input id="Title" formControlName="description" type="text" class="grow" placeholder="Description" />
+                            <div class="error" *ngIf="editEmployeeForm.controls['firstName'].errors as descriptionError">
+                                <div *ngIf="descriptionError" class="text-red-400">Description is required</div>
+                            </div>
+                        </label>
+                        <select formControlName="qualificationType" class="select select-bordered join-item col-span-3">
+                          <option disabled value=0 selected>Qualification Type</option>
+                          <option value=1>Education</option>
+                          <option value=2>Certification</option>
+                        </select>
+                        <select formControlName="educationLevel" class="select select-bordered join-item col-span-3">
+                            <option disabled value=0 selected>Education Level</option>
+                            <option value=1>None</option>
+                            <option value=2>BSC</option>
+                            <option value=3>Masters</option>
+                            <option value=4>PHD</option>
+                            <option value=5>HND</option>
+                            <option value=6>OND</option>
+                        </select>
+                        <label class="input input-bordered flex items-center gap-2 col-span-3">
+                            Date Received
+                            <input id="dateReceived" type="date" formControlName="dateReceived" class="grow" placeholder="Date Received" />
+                        </label>
+                        <label class="input input-bordered flex items-center gap-2 col-span-3">
+                            Expiry Date
+                            <input id="expiryDate" type="date" formControlName="expiryDate" class="grow" placeholder="Expiry Date" />
+                        </label>
+                        <label class="input input-bordered flex items-center gap-2 col-span-6">
+                            Document                          
+                            <input id="mediaFile" formControlName="mediaFile" type="file" (change)="changeFile($event)" class="file-input file-input-ghost w-full max-w-xs" accept=".csv,text/plain, text/csv, text/html, image/*, .pdf" />
+                        </label>
+                        <div class="indicator">
+                          <button [disabled]="!addQualificationForm.valid || !addQualificationForm.dirty || loading" class="btn btn-secondary join-item">Add</button>
+                        </div>
+                    </div>
+                </form>
+                <!-- Qualifications Table -->
+                <table class="table table-zebra table-md mt-10">
+                    <thead>
+                      <tr>
+                        <th *ngFor="let header of headers"> {{header}}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let qualification of employeeDetail.qualifications">
+                        <td>{{qualification.title}}</td>
+                        <td>{{qualification.description}}</td>
+                        <td>{{qualification.qualificationType}}</td>
+                        <td>{{qualification.educationLevel}}</td>
+                        <td>{{qualification.dateReceived}}</td>
+                        <td>{{qualification.expiryDate}}</td>
+                        <td>
+                            <div class="flex flex-row gap-5">
+                              <button [disabled]="qualification.mediaFileId == null" (click)="previewDocument(qualification.id)" class="btn btn-circle btn-xs">
+                                <svg class="h-8 w-8 text-blue-400"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round">  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />  <circle cx="12" cy="12" r="3" /></svg>
+                              </button>
+                              <button (click)="deleteQualification(qualification.id)" class="btn btn-circle btn-xs">
+                                <svg class="h-8 w-8 text-red-400"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round">  <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z" />  <line x1="18" y1="9" x2="12" y2="15" />  <line x1="12" y1="9" x2="18" y2="15" /></svg>  
+                              </button>
+                            </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>        
+    </div>
+</div>
+<!-- Preview Modal for Documents  -->
+<app-view-employee-doc
+    [show]=showDoc
+    [mediaFile]=doc
+    (onClose)="closeDocView()"
+></app-view-employee-doc> 

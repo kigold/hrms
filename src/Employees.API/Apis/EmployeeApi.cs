@@ -4,6 +4,7 @@ using Employees.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Shared.ApiHelper;
 using Shared.Auth;
 using Shared.Pagination;
@@ -24,10 +25,15 @@ namespace Employees.API.Apis
 
             employeeGroup.MapPost("/", CreatedEmployee).RequireAuthorization(Permission.EMPLOYEE_CREATE.ToString());
             employeeGroup.MapPut("/", UpdateEmployee).RequireAuthorization(Permission.EMPLOYEE_UPDATE.ToString());
-            employeeGroup.MapPut("/qualification/add", AddQualificationEmployee).RequireAuthorization(Permission.EMPLOYEE_UPDATE.ToString());
-            employeeGroup.MapPut("/qualification/remove/{qualificationId}", RemoveQualificationEmployee).RequireAuthorization(Permission.EMPLOYEE_UPDATE.ToString());
+            employeeGroup.MapPost("/qualification/file", AddQualificationEmployeeFile).RequireAuthorization(Permission.EMPLOYEE_UPDATE.ToString())
+                //.Accepts(true, "multipart/form-data")
+                .Accepts<IFormFile>("multipart/form-data")
+                .DisableAntiforgery();
+            employeeGroup.MapPost("/qualification", AddQualificationEmployee).RequireAuthorization(Permission.EMPLOYEE_UPDATE.ToString()); ;
+            employeeGroup.MapDelete("/qualification/{qualificationId}", RemoveQualificationEmployee).RequireAuthorization(Permission.EMPLOYEE_UPDATE.ToString());
             employeeGroup.MapDelete("/{id}", DeleteEmployee).RequireAuthorization(Permission.EMPLOYEE_DELETE.ToString());
             employeeGroup.MapGet("/", GetEmployees).RequireAuthorization(Permission.EMPLOYEE_READ.ToString());
+            employeeGroup.MapGet($"/{{id}}", GetEmployee).RequireAuthorization(Permission.EMPLOYEE_READ.ToString());
 
             return app;
         }
@@ -53,7 +59,17 @@ namespace Employees.API.Apis
             return TypedResults.NoContent();
         }
 
-        //PUT /Employee/Qualification
+        //POST /Employee/Qualification/File
+        public static async Task<Results<Ok<QualificationResponse>, ValidationProblem>> AddQualificationEmployeeFile(IEmployeeService employeeService, [FromForm] AddEmployeeQualification request)
+        {
+            var result = await employeeService.AddQualification(request);
+            if (result.HasError)
+                return result.ValidationProblem();
+
+            return TypedResults.Ok(result.Data);
+        }
+
+        //POST /Employee/Qualification
         public static async Task<Results<Ok<QualificationResponse>, ValidationProblem>> AddQualificationEmployee(IEmployeeService employeeService, AddEmployeeQualification request)
         {
             var result = await employeeService.AddQualification(request);
@@ -86,11 +102,22 @@ namespace Employees.API.Apis
         //GET /Employee
         public static async Task<Results<Ok<PagedList<EmployeeResponse>>, ValidationProblem>> GetEmployees(IEmployeeService employeeService, [AsParameters] PagedRequest request)
         {
-            var result = await employeeService.GetEmployee(1, request);
+            var companyId = 1; //TODO Configure Company Id
+            var result = await employeeService.GetEmployee(companyId, request);
             if (result.HasError)
                 return result.ValidationProblem();
 
-            Console.WriteLine($"Total Result Count {result.Data.TotalCount}");
+            return TypedResults.Ok(result.Data);
+        }
+
+        //GET /Employee/id
+        public static async Task<Results<Ok<EmployeeDetailResponse>, ValidationProblem>> GetEmployee(IEmployeeService employeeService, long id)
+        {
+            var companyId = 1; //TODO Configure Company Id
+            var result = await employeeService.GetEmployee(companyId, id);
+
+            if (result.HasError)
+                return result.ValidationProblem();
 
             return TypedResults.Ok(result.Data);
         }

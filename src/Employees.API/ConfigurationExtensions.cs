@@ -7,15 +7,21 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
 using Shared.Data;
+using Shared.FileStorage;
 using Shared.Messaging;
 using Shared.Permissions;
 using Shared.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using static Shared.Messaging.PubMessageType;
 
 namespace Employees.API
 {
@@ -36,11 +42,17 @@ namespace Employees.API
             services.AddTransient<IRepository<Qualification, long>, Repository<Qualification, long, EmployeeDbContext>>();
             services.AddTransient<IRepository<Company, int>, Repository<Company, int, EmployeeDbContext>>();
             services.AddTransient<IRepository<MediaFile, Guid>, Repository<MediaFile, Guid, EmployeeDbContext>>();
-            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();            
 
+            return services;
+        }
+
+        public static IServiceCollection AddMessageBus(this IServiceCollection services)
+        {
             services.AddMassTransit(x =>
             {
                 x.SetKebabCaseEndpointNameFormatter();
+                x.AddConsumer<FileProcessorConsumer>().ExcludeFromConfigureEndpoints();
                 x.AddConsumer<EmployeeMessageConsumer>().ExcludeFromConfigureEndpoints();
 
                 x.UsingRabbitMq((context, cfg) =>
@@ -64,6 +76,27 @@ namespace Employees.API
                         });
                     });
 
+                    cfg.ReceiveEndpoint("delete-file", e =>
+                    {
+                        e.ConfigureConsumeTopology = false;
+                        e.ConfigureConsumer<FileProcessorConsumer>(context);
+                        e.Bind<PublishMessage>(x =>
+                        {
+                            x.ExchangeType = ExchangeType.Direct;
+                            x.RoutingKey = FILE_PROCESS_DELETE_FILE;
+                        });
+                    });
+
+                    cfg.ReceiveEndpoint("shrink-file", e =>
+                    {
+                        e.ConfigureConsumeTopology = false;
+                        e.Bind<PublishMessage>(x =>
+                        {
+                            x.ExchangeType = ExchangeType.Direct;
+                            x.RoutingKey = FILE_PROCESS_SHRINK_FILE;
+                        });
+                    });
+
                     cfg.Send<PublishMessage>(x =>
                     {
                         // use customerType for the routing key
@@ -75,14 +108,23 @@ namespace Employees.API
                 });
             });
 
-            services.AddHostedService<SeedingWorker>(); //Seed Companies
+            return services;
+        }
+
+        public static IServiceCollection AddFileProvider(this IServiceCollection services, WebApplicationBuilder builder)
+        {
+            var fileSetting = builder.Configuration.GetSection(nameof(FileStorageSetting)).Get<FileStorageSetting>()!;
+            services.Configure<FileStorageSetting>(builder.Configuration.GetSection(nameof(FileStorageSetting)));
+            Directory.CreateDirectory(fileSetting.BaseDirectory);
+            services.AddSingleton<IFileProvider>(new PhysicalFileProvider(fileSetting.BaseDirectory));
 
             return services;
         }
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IEmployeeService, EmployeeService>(); 
+            services.AddHostedService<SeedingWorker>(); //Seed Companies
 
             return services;
         }

@@ -1,15 +1,16 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { throwError } from 'rxjs';
 import { ToastService } from './toast.service';
 import { ToastType } from '../models/toast';
+import { MediaFile } from '../models/util';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HelperService {
 
+	private FILE_SERVER_URL: string = "https://localhost:7178";
   constructor(private toastService: ToastService) { }
   
   toastInfo( title: string){
@@ -33,6 +34,10 @@ export class HelperService {
 	})
   }
 
+  getFilePath(file: MediaFile){
+	return `${this.FILE_SERVER_URL}/${file.filePath}`
+  }
+
   handleError(error: any){
 		if (error.status === 0) {
 			// A client-side or network error occurred. Handle it accordingly.
@@ -40,7 +45,14 @@ export class HelperService {
 			this.toastError(error.message, []);
 		  } 
 		  else if (error.status === 400) {
-			this.toastError(error.message, error.error.errors['Error'])
+			if (error.error.errors && error.error.errors['Error'])
+				this.toastError(error.message, error.error.errors['Error']);
+			else if (error.error && error.error['detail'])
+				{
+					this.toastError(error.message, [error.error['title'], error.error['detail']]);
+				}
+			else
+				this.toastError(error.message, []);
 		  } 
 		  else {
 			// The backend returned an unsuccessful response code.

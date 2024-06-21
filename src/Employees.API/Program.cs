@@ -1,4 +1,5 @@
 using Employees.API;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +11,14 @@ builder.Logging.AddConsole();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.ConfigureAuth(builder.Configuration);
 builder.Services.AddApplicationDependencies(builder.Configuration);
+builder.Services.AddMessageBus();
 builder.Services.AddApplicationServices();
+builder.Services.AddFileProvider(builder);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
 builder.Services.AddCors();
+builder.Services.AddAntiforgery();
 
 var app = builder.Build();
 
@@ -34,8 +38,10 @@ app.UseCors(x =>
     //.AllowCredentials();
 });
 
+app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
+//app.MapCustomEnpoints();
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())

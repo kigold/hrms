@@ -17,6 +17,7 @@ using Shared.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using static Shared.Messaging.PubMessageType;
 
 namespace Auth.API
 {
@@ -30,7 +31,13 @@ namespace Auth.API
             services.AddTransient<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof(IDbContextProvider<>), typeof(UnitOfWorkDbContextProvider<>));
             services.AddTransient<IRepository<User, long>, Repository<User, long, AuthDbContext>>();
-            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();           
+
+            return services;
+        }
+
+        public static IServiceCollection AddMessageBus(this IServiceCollection services)
+        {
             services.AddMassTransit(x =>
             {
                 x.SetKebabCaseEndpointNameFormatter();
@@ -55,7 +62,18 @@ namespace Auth.API
                         e.Bind<PublishMessage>(x =>
                         {
                             x.ExchangeType = ExchangeType.Direct;
-                            x.RoutingKey = PubMessageType.CreateUser.ToString();
+                            x.RoutingKey = EMPLOYEE_CREATE_USER;
+                        });
+                    });
+
+                    cfg.ReceiveEndpoint("edit-user", e =>
+                    {
+                        e.ConfigureConsumeTopology = false;
+                        e.ConfigureConsumer<AuthMessageConsumer>(context);
+                        e.Bind<PublishMessage>(x =>
+                        {
+                            x.ExchangeType = ExchangeType.Direct;
+                            x.RoutingKey = EMPLOYEE_UPDATE_USER;
                         });
                     });
 
@@ -66,7 +84,7 @@ namespace Auth.API
                         e.Bind<PublishMessage>(x =>
                         {
                             x.ExchangeType = ExchangeType.Direct;
-                            x.RoutingKey = PubMessageType.DeleteUser.ToString(); ;
+                            x.RoutingKey = EMPLOYEE_DELETE_USER;
                         });
                     });
 

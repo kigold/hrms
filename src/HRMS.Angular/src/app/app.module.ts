@@ -8,7 +8,6 @@ import {  HttpClientModule, provideHttpClient, withInterceptors } from '@angular
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { LoginComponent } from './components/login/login.component';
-import { CreateEmployeeComponent } from './employee/create-employee/create-employee.component';
 import { headerInterceptor } from './interceptor/header.interceptor';
 import { ToastComponent } from './components/toast/toast.component';
 import { UsersComponent } from './pages/users/users.component';
@@ -30,8 +29,7 @@ import { UserComponent } from './pages/user/user.component';
     ToastComponent,
     LoginComponent,    
     UsersComponent,
-    RoleComponent,
-    CreateEmployeeComponent
+    RoleComponent    
   ],
   providers: [
     provideAnimationsAsync(),

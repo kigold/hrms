@@ -3,6 +3,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Shared.Messaging;
 using System.Text.Json;
+using static Shared.Messaging.PubMessageType;
 
 namespace Auth.API.Messaging
 {
@@ -25,15 +26,21 @@ namespace Auth.API.Messaging
         {
             try
             {
-                _logger.LogInformation(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Received: {message}", context.Message.Message);
+                _logger.LogDebug("Received: {message}", context.Message.Message);
                 switch (context.Message.MessageType)
                 {
-                    case PubMessageType.CreateUser:
+                    case EMPLOYEE_CREATE_USER:
                         await CreateUser(context.Message);
                         break;
-                    case PubMessageType.DeleteUser:
+                    case EMPLOYEE_UPDATE_USER:
+                        await UpdateUser(context.Message);
+                        break;
+                    case EMPLOYEE_DELETE_USER:
                         await DeleteUser(context.Message);
                         break;
+                    default:
+                        _logger.LogWarning("No handler for message: {message}", context.Message);
+                        return;
                 }
 
                 await Task.CompletedTask;
@@ -41,6 +48,7 @@ namespace Auth.API.Messaging
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message, ex);
+                throw;
             }
         }
 
@@ -67,7 +75,26 @@ namespace Auth.API.Messaging
             }
 
             var pubMessage = JsonSerializer.Serialize(new EmployeeStaffIdDTO(user.Id, user.Email));
-            await _bus.Publish(new PublishMessage(pubMessage, PubMessageType.SetStaffId));
+            await _bus.Publish(new PublishMessage(pubMessage, EMPLOYEE_SET_STAFF_ID));
+        }
+
+        private async Task UpdateUser(PublishMessage message)
+        {
+            var request = JsonSerializer.Deserialize<EmployeeDTO>(message.Message);
+            var user = await _userManager.FindByNameAsync(request!.Email);
+            if (user is null)
+            {
+                _logger.LogInformation("User does not exists {email}", request!.Email);
+                return;
+            }
+
+            user.Firstname = request!.FirstName;
+            user.Lastname = request.LastName;
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                _logger.LogInformation("Failed to Update User {user} {errors}", user, result.Errors);
+            }
         }
 
         private async Task DeleteUser(PublishMessage message)

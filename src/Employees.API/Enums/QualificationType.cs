@@ -2,17 +2,17 @@
 {
     public enum QualificationType
     {
-        Education = 0,
-        Certification = 1,
+        Education = 1,
+        Certification = 2,
     }
 
     public enum EducationLevel
     {
-        None = 0,
-        BSC = 1,
-        Masters = 2,
-        PHD = 3,
-        HND = 4,
-        OND = 5,
+        None = 1,
+        BSC = 2,
+        Masters = 3,
+        PHD = 4,
+        HND = 5,
+        OND = 6,
     }
 }
